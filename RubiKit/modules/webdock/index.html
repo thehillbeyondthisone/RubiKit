@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>RubiKitOS · Web-Dock</title>
+<style>
+/* =========================================
+   Web-Dock · Flagship
+   PalettePilot-ready + Built-in Themes
+   ========================================= */
+
+/* ---------- Theme plumbing (PalettePilot) ---------- */
+:root{
+  /* These are the tokens your theme shim can override */
+  --r-bg-0: #0b0c10;
+  --r-bg-1: #10121a;
+  --r-bg-2: #171a24;
+  --r-panel: #0f1118;
+  --r-grid: #2a2f3b;
+  --r-fg: #eef0f6;
+  --r-dim: #a6a9b7;
+  --r-ac: #ff6b00;
+  --r-ok: #52d273;
+  --r-warn: #ffd166;
+  --r-err: #ff5c7c;
+}
+
+/* Built-in schemes (can be overridden by PalettePilot at runtime) */
+:root[data-theme="inferno"]{
+  --r-bg-0:#0b0c10; --r-bg-1:#10121a; --r-bg-2:#171a24; --r-panel:#0f1118; --r-grid:#2a2f3b;
+  --r-fg:#eef0f6; --r-dim:#a6a9b7; --r-ac:#ff6b00; --r-ok:#52d273; --r-warn:#ffd166; --r-err:#ff5c7c;
+}
+:root[data-theme="notum"]{
+  --r-bg-0:#0a0f1c; --r-bg-1:#0e1526; --r-bg-2:#111a30; --r-panel:#0b1122; --r-grid:#23324a;
+  --r-fg:#e6f0ff; --r-dim:#98a6c7; --r-ac:#3aa2ff; --r-ok:#49e0b4; --r-warn:#ffd36b; --r-err:#ff6a8a;
+}
+:root[data-theme="terminal"]{
+  --r-bg-0:#050505; --r-bg-1:#0a0a0a; --r-bg-2:#101010; --r-panel:#0b0b0b; --r-grid:#1d1d1d;
+  --r-fg:#e8ffe8; --r-dim:#9cd39c; --r-ac:#20c20e; --r-ok:#20c20e; --r-warn:#ffd166; --r-err:#ff5c7c;
+}
+:root[data-theme="paper"]{
+  --r-bg-0:#f6f7fb; --r-bg-1:#ffffff; --r-bg-2:#f0f2f7; --r-panel:#ffffff; --r-grid:#e1e4ee;
+  --r-fg:#111318; --r-dim:#5a6376; --r-ac:#3a6cf0; --r-ok:#2ea87b; --r-warn:#e6a400; --r-err:#d43a5e;
+}
+:root[data-theme="monokai"]{
+  --r-bg-0:#1f201b; --r-bg-1:#24251f; --r-bg-2:#2a2b24; --r-panel:#24251f; --r-grid:#3b3d33;
+  --r-fg:#f8f8f2; --r-dim:#b8b8b0; --r-ac:#f92672; --r-ok:#a6e22e; --r-warn:#e6db74; --r-err:#fd5f6b;
+}
+
+/* ---------- App tokens (derive from r-*) ---------- */
+:root{
+  --bg0: var(--r-bg-0);
+  --bg1: var(--r-bg-1);
+  --bg2: var(--r-bg-2);
+  --panel: var(--r-panel);
+  --grid: var(--r-grid);
+  --fg: var(--r-fg);
+  --dim: var(--r-dim);
+  --ac: var(--r-ac);
+  --ok: var(--r-ok);
+  --warn: var(--r-warn);
+  --err: var(--r-err);
+  --shadow: rgba(0,0,0,.35);
+  --radius: 14px;
+  --cell: 10px;   /* grid auto-row height unit */
+  --gap: 12px;    /* grid gap */
+}
+
+*{box-sizing:border-box}
+html,body{
+  height:100%;margin:0;background:var(--bg0);color:var(--fg);
+  font:14px/1.35 ui-sans-serif, system-ui, -apple-system, "Inter","Segoe UI",Roboto,Helvetica,Arial;
+}
+
+/* ---------- Layout ---------- */
+.app{
+  display:grid; grid-template-columns:260px 1fr 0; grid-template-rows:auto 1fr; height:100vh;
+}
+.topbar{
+  grid-column:1/4; display:flex; align-items:center; gap:.6rem;
+  padding:.65rem .85rem; background:linear-gradient(180deg,var(--bg2),var(--bg1));
+  border-bottom:1px solid var(--grid); position:sticky; top:0; z-index:10;
+}
+.logo{display:flex; align-items:center; gap:.6rem; font-weight:800; letter-spacing:.3px}
+.logo .dot{width:10px;height:10px;border-radius:50%;background:var(--ac); box-shadow:0 0 16px color-mix(in srgb, var(--ac) 60%, transparent)}
+.split{flex:1}
+.select{height:34px; background:var(--panel); color:var(--fg); border:1px solid var(--grid); border-radius:12px; padding:0 .6rem}
+.search{
+  display:flex; align-items:center; gap:.5rem; min-width:260px;
+  background:var(--panel); border:1px solid var(--grid); border-radius:12px; padding:.2rem .6rem
+}
+.search input{background:transparent;border:0;outline:none;color:var(--fg);height:30px;flex:1}
+
+/* ---------- Buttons ---------- */
+.btn{
+  display:inline-flex; align-items:center; gap:.45rem; min-height:34px;
+  padding:.35rem .7rem; border-radius:12px; background:var(--panel);
+  border:1px solid var(--grid); color:var(--fg); cursor:pointer; user-select:none;
+  transition:transform .05s ease, background .15s ease, border-color .15s ease;
+}
+.btn:hover{border-color:#3a3a49; transform:translateY(-.5px)}
+.btn:active{transform:none; opacity:.96}
+.btn.ac{background:var(--ac); border-color:#000; color:#fff}
+.btn.ghost{background:transparent}
+
+/* ---------- Sidebar (Spaces) ---------- */
+.sidebar{
+  grid-column:1; grid-row:2; display:flex; flex-direction:column; gap:.6rem;
+  padding:12px; background:linear-gradient(180deg,var(--bg2),var(--bg1)); border-right:1px solid var(--grid);
+}
+.side-head{display:flex; align-items:center; justify-content:space-between; padding:6px 8px}
+.side-title{font-weight:800; letter-spacing:.2px}
+.side-list{display:flex; flex-direction:column; gap:6px; overflow:auto; padding:4px}
+.space{
+  display:flex; align-items:center; gap:.55rem; padding:10px 10px; border-radius:12px;
+  border:1px solid var(--grid); background:var(--panel); cursor:pointer; user-select:none;
+}
+.space:hover{border-color:#3a3a49}
+.space.active{outline:2px solid color-mix(in srgb, var(--ac) 55%, transparent)}
+.space .dot{width:8px;height:8px;border-radius:50%;background:#9094a3}
+.space .name{flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.space .act{display:flex; gap:6px; opacity:.9}
+.space .icon-btn{background:transparent; border:0; color:var(--dim); cursor:pointer}
+.space .icon-btn:hover{color:#fff}
+.space.drag{opacity:.45}
+
+/* ---------- Board ---------- */
+.board{grid-column:2; grid-row:2; display:grid; grid-template-rows:auto 1fr; overflow:hidden;}
+.board-head{display:flex; align-items:center; gap:.6rem; padding:12px;}
+.board-title{font-size:16px; font-weight:800}
+.board-grid{
+  overflow:auto; padding:12px;
+  display:grid; gap:var(--gap);
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  grid-auto-rows: var(--cell);
+  grid-auto-flow: dense;
+}
+
+/* ---------- Tile ---------- */
+.tile{
+  position:relative; display:flex; flex-direction:column; gap:.55rem; padding:12px;
+  background:linear-gradient(180deg,#12131b,#0d0f16); border:1px solid var(--grid); border-radius:16px;
+  box-shadow:0 6px 20px var(--shadow); user-select:none; cursor:default;
+  transition:border-color .15s ease;
+  grid-row: span 18; grid-column: span 1;
+  min-height: calc(var(--cell) * 10);
+  overflow:hidden;
+}
+.tile:hover{border-color:#3a3a49}
+.tile.selected{outline:2px solid color-mix(in srgb, var(--ac) 55%, transparent)}
+.colorbar{position:absolute; inset:0 0 auto 0; height:3px; border-top-left-radius:16px; border-top-right-radius:16px; opacity:.9}
+.row{display:flex; align-items:center; gap:.6rem; justify-content:space-between}
+.left{display:flex; align-items:center; gap:.6rem; min-width:0}
+.favicon{width:20px;height:20px;border-radius:6px;background:#1a1a22;display:inline-flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0}
+.favicon img{display:block;width:16px;height:16px}
+.title{font-weight:800; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.url{font-size:12px; color:var(--dim); white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.body{flex:1; min-height:0; display:flex; flex-direction:column; gap:.5rem; overflow:hidden}
+.note{font-size:13px; color:var(--dim); flex:1; min-height:0; overflow:auto; white-space:pre-wrap; word-break:break-word}
+.tagrow{display:flex; gap:.35rem; flex-wrap:wrap; margin-top:auto}
+.tag{font-size:11px; border:1px solid var(--grid); border-radius:999px; padding:.15rem .45rem; color:var(--dim); background:#0e0f15}
+
+/* Single, stylized edit button */
+.tile-edit{
+  position:absolute; top:6px; right:6px; border:1px solid var(--grid);
+  background:rgba(0,0,0,.35); color:var(--fg); border-radius:10px;
+  padding:.15rem .5rem; cursor:pointer; opacity:.9; z-index:2;
+}
+.tile-edit:hover{background:rgba(0,0,0,.55)}
+
+/* Resizer */
+.resize{
+  position:absolute; right:6px; bottom:6px; width:14px; height:14px;
+  border-radius:4px; cursor:nwse-resize; opacity:.9;
+  background:
+    linear-gradient(135deg, transparent 0 45%, #999 45% 55%, transparent 55% 100%),
+    linear-gradient(135deg, transparent 0 65%, #666 65% 75%, transparent 75% 100%),
+    linear-gradient(135deg, transparent 0 85%, #444 85% 95%, transparent 95% 100%);
+  filter: drop-shadow(0 1px 0 rgba(0,0,0,.35));
+}
+.size-hint{
+  position:absolute; right:28px; bottom:6px; font-size:11px; color:var(--dim);
+  background:#0e0f15; border:1px solid var(--grid); padding:2px 6px; border-radius:8px; opacity:.85;
+}
+
+/* Media (YouTube + Audio) — bounded, no layout shift */
+.media-body{flex:1; min-height:0; display:grid; place-items:center; overflow:hidden}
+.ytbox{
+  width:100%; aspect-ratio:16/9; max-height:100%;
+  border-radius:12px; overflow:hidden; background:#000;
+}
+.ytbox iframe{display:block; width:100%; height:100%; border:0}
+
+/* Audio player */
+.player{background:#0f1016; border:1px dashed #2c2c36; border-radius:12px; padding:8px; display:flex; flex-direction:column; min-height:0}
+.player .controls{display:flex; align-items:center; gap:.35rem; flex-wrap:wrap}
+.player .controls .btn{min-height:28px; border-radius:10px; padding:.2rem .55rem}
+.player .meta{font-size:12px; color:var(--dim); margin-left:auto; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.drop{border:1px dashed #3a3a48; padding:8px; border-radius:10px; text-align:center; color:var(--dim); margin-top:.5rem}
+.drop.drag{outline:2px solid var(--ac)}
+.playlist{margin:.45rem 0 .2rem 0; max-height:120px; overflow:auto; border-top:1px solid var(--grid)}
+.playlist .trk{display:flex; align-items:center; gap:.5rem; padding:.35rem .25rem; cursor:pointer}
+.playlist .trk.active{background:#14141f}
+.playlist .num{font-size:11px; color:var(--dim); width:1.5em; text-align:right}
+
+/* Inspector */
+.inspector{
+  position:fixed; right:16px; top:72px; width:380px; max-width:92vw;
+  background:linear-gradient(180deg,var(--bg2),var(--bg1)); border:1px solid var(--grid); border-radius:16px;
+  box-shadow:0 20px 60px var(--shadow); padding:14px; display:none; z-index:30;
+}
+.inspector.show{display:block}
+.ins-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:8px}
+.ins-title{font-weight:800}
+.form{display:grid; gap:10px}
+.rowf{display:grid; grid-template-columns:110px 1fr; gap:.6rem; align-items:center}
+.rowf input,.rowf select,.rowf textarea{
+  height:36px; background:#0f1016; border:1px solid var(--grid); color:var(--fg); border-radius:10px; padding:.35rem .6rem; outline:none}
+.rowf textarea{height:76px; resize:vertical}
+.ins-foot{display:flex; justify-content:space-between; margin-top:6px}
+
+/* Context Menu & Viewer */
+.menu{position:fixed; display:none; min-width:190px; background:var(--bg2); border:1px solid var(--grid);
+  border-radius:12px; padding:6px; box-shadow:0 10px 30px var(--shadow); z-index:50}
+.menu .item{padding:.55rem .7rem; border-radius:9px; cursor:pointer; user-select:none}
+.menu .item:hover{background:var(--ac); color:#fff}
+.menu .sep{height:1px; background:var(--grid); margin:5px 0}
+
+.viewer{position:fixed; inset:16px; display:none; z-index:55}
+.viewer.show{display:grid}
+.viewer .chrome{
+  display:flex; align-items:center; gap:.4rem; padding:.5rem; border:1px solid var(--grid);
+  border-bottom:0; border-top-left-radius:16px; border-top-right-radius:16px;
+  background:linear-gradient(180deg,var(--bg2),var(--bg1));
+}
+.viewer .chrome .btn{min-height:30px; border-radius:10px; padding:.2rem .6rem}
+.viewer .chrome input{
+  height:34px; background:#0f1016; border:1px solid var(--grid); color:var(--fg);
+  border-radius:10px; padding:0 .6rem; outline:none; flex:1
+}
+.viewer .frame{border:1px solid var(--grid); border-bottom-left-radius:16px; border-bottom-right-radius:16px; overflow:hidden; height:calc(100vh - 110px); background:#000}
+.viewer iframe{width:100%; height:100%; border:0}
+
+/* helpers */
+kbd{font:12px/1.2 ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  color:var(--fg); background:#171a24; border:1px solid var(--grid); border-bottom-color:#22263a; padding:2px 6px; border-radius:6px}
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- Top bar: logo, theme picker, search -->
+  <div class="topbar">
+    <div class="logo"><span class="dot"></span> RubiKitOS · Web-Dock</div>
+    <div class="split"></div>
+    <label for="themeSel" style="opacity:.8;margin-right:.35rem">Theme</label>
+    <select id="themeSel" class="select">
+      <option value="inferno">Inferno</option>
+      <option value="notum">Notum Blue</option>
+      <option value="terminal">Terminal</option>
+      <option value="paper">Paper</option>
+      <option value="monokai">Monokai</option>
+    </select>
+    <div class="search" style="margin-left:.6rem"><span style="opacity:.8">🔎</span><input id="search" placeholder="Search (press /)"/></div>
+  </div>
+
+  <!-- Sidebar (Spaces) -->
+  <aside class="sidebar">
+    <div class="side-head">
+      <div class="side-title">Spaces</div>
+      <button class="btn ac" id="addSpace" title="Add Space">＋</button>
+    </div>
+    <div class="side-list" id="spaceList"></div>
+  </aside>
+
+  <!-- Board -->
+  <main class="board">
+    <div class="board-head">
+      <div class="board-title" id="boardTitle">—</div>
+      <div class="split"></div>
+      <button class="btn ac" id="btnNewTile">＋ Add Tile</button>
+      <span style="color:var(--dim);margin-left:.6rem">Tip: <kbd>/</kbd> search · <kbd>N</kbd> new · resize with ◢</span>
+    </div>
+    <div class="board-grid" id="grid"></div>
+  </main>
+
+  <div></div> <!-- grid filler -->
+</div>
+
+<!-- Inspector -->
+<div class="inspector" id="inspector">
+  <div class="ins-head">
+    <div class="ins-title">Inspector</div>
+    <button class="btn ghost" id="insClose">✕</button>
+  </div>
+  <div class="form">
+    <div class="rowf"><label>Type</label>
+      <select id="iType">
+        <option value="link">Link</option>
+        <option value="note">Note</option>
+        <option value="youtube">YouTube</option>
+        <option value="audio">Audio</option>
+      </select>
+    </div>
+    <div class="rowf"><label>Title</label><input id="iTitle"/></div>
+    <div class="rowf" data-for="link youtube"><label>URL</label><input id="iUrl" placeholder="https://..."/></div>
+    <div class="rowf" data-for="note link"><label>Notes</label><textarea id="iNotes"></textarea></div>
+    <div class="rowf"><label>Tags</label><input id="iTags" placeholder="dev, docs, etc"/></div>
+    <div class="rowf"><label>Color</label>
+      <select id="iColor">
+        <option value="#ff6b00">Inferno</option><option value="#00bcd4">Cyan</option>
+        <option value="#52d273">Green</option><option value="#ffd166">Amber</option>
+        <option value="#ff5c7c">Rose</option><option value="#9c6bff">Violet</option>
+        <option value="#3aa2ff">Blue</option><option value="#a9a9b3">Slate</option>
+      </select>
+    </div>
+    <div class="rowf"><label>Size</label>
+      <div style="display:flex; gap:.5rem">
+        <input id="iW" type="number" min="1" max="6" step="1" style="max-width:90px" />
+        <input id="iH" type="number" min="8" max="100" step="1" style="max-width:90px" />
+        <span style="color:var(--dim)">cols × rows</span>
+      </div>
+    </div>
+    <div class="rowf"><label>Order</label>
+      <div style="display:flex; gap:.5rem">
+        <button class="btn" id="moveLeft">◀ Move Left</button>
+        <button class="btn" id="moveRight">Move Right ▶</button>
+      </div>
+    </div>
+  </div>
+  <div class="ins-foot">
+    <div><button class="btn ghost" id="iDelete">Delete</button></div>
+    <div style="display:flex; gap:.5rem">
+      <button class="btn" id="iDuplicate">Duplicate</button>
+      <button class="btn ac" id="iSave">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Context Menu -->
+<div class="menu" id="menu"></div>
+
+<!-- Viewer -->
+<div class="viewer" id="viewer">
+  <div class="chrome">
+    <button class="btn" id="vBack">⟸</button>
+    <button class="btn" id="vFwd">⟹</button>
+    <button class="btn" id="vReload">↻</button>
+    <input id="vUrl" placeholder="Type URL and Enter"/>
+    <button class="btn" id="vOpen">↗ Pop-out</button>
+    <button class="btn" id="vClose">✕</button>
+  </div>
+  <div class="frame"><iframe id="vFrame" src="about:blank" sandbox="allow-scripts allow-same-origin allow-forms allow-popups"></iframe></div>
+</div>
+
+<input type="file" id="fileIn" accept="application/json" style="display:none"/>
+<script>
+(function(){
+  const $  = s => document.querySelector(s);
+  const $$ = s => Array.from(document.querySelectorAll(s));
+  const uid = p => `${p}_${Math.random().toString(36).slice(2,9)}`;
+  const clamp = (v,a,b)=>Math.max(a,Math.min(b,v));
+  const norm = u => { u=(u||'').trim(); if(!u) return ''; if(/^about:blank$/i.test(u)) return 'about:blank'; return /^[a-z]+:\/\//i.test(u)?u:'https://'+u; };
+  const fav = u => { try{ const h=new URL(norm(u)).host; return h?`https://www.google.com/s2/favicons?domain=${encodeURIComponent(h)}&sz=64`:'' }catch{return ''} };
+  const html = s => (s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+  /* ---------- Storage ---------- */
+  const K = { tiles:'wd.tiles.v6', groups:'wd.groups.v6', order:'wd.order.v6', playlists:'wd.pl.v6', theme:'wd.theme' };
+  let tiles = load(K.tiles, []);
+  let groups = load(K.groups, []);
+  let order = load(K.order, { active:null, groups:[], tiles:{} });
+  let playlists = load(K.playlists, {});
+  function load(k,f){ try{ return JSON.parse(localStorage.getItem(k)) ?? f }catch{ return f } }
+  function save(){ localStorage.setItem(K.tiles, JSON.stringify(tiles));
+                   localStorage.setItem(K.groups, JSON.stringify(groups));
+                   localStorage.setItem(K.order, JSON.stringify(order));
+                   localStorage.setItem(K.playlists, JSON.stringify(playlists)); }
+
+  /* ---------- Theme ---------- */
+  const themeSel = $('#themeSel');
+  const savedTheme = localStorage.getItem(K.theme) || 'inferno';
+  document.documentElement.setAttribute('data-theme', savedTheme);
+  themeSel.value = savedTheme;
+  themeSel.onchange = () => { document.documentElement.setAttribute('data-theme', themeSel.value); localStorage.setItem(K.theme, themeSel.value); };
+
+  /* ---------- DOM refs ---------- */
+  const els = {
+    spaceList: $('#spaceList'), boardTitle: $('#boardTitle'), grid: $('#grid'),
+    inspector: $('#inspector'),
+    iType: $('#iType'), iTitle: $('#iTitle'), iUrl: $('#iUrl'), iNotes: $('#iNotes'),
+    iTags: $('#iTags'), iColor: $('#iColor'), iW: $('#iW'), iH: $('#iH'),
+    iSave: $('#iSave'), iDuplicate: $('#iDuplicate'), iDelete: $('#iDelete'),
+    moveLeft: $('#moveLeft'), moveRight: $('#moveRight'), iClose: $('#insClose'),
+    search: $('#search'), menu: $('#menu'),
+    viewer: $('#viewer'), vBack: $('#vBack'), vFwd: $('#vFwd'), vReload: $('#vReload'),
+    vUrl: $('#vUrl'), vOpen: $('#vOpen'), vClose: $('#vClose'), vFrame: $('#vFrame'),
+    fileIn: $('#fileIn'), addSpace: $('#addSpace'), btnNewTile: $('#btnNewTile')
+  };
+
+  /* ---------- Seed on first run (YouTube tile has no h so it autosizes) ---------- */
+  if(groups.length === 0){
+    const gWelcome = { id: uid('g'), title: 'Welcome' };
+    const gMedia   = { id: uid('g'), title: 'Media & Tools' };
+    groups.push(gWelcome, gMedia);
+    order.groups.push(gWelcome.id, gMedia.id);
+    order.tiles[gWelcome.id] = []; order.tiles[gMedia.id] = [];
+    order.active = gWelcome.id;
+
+    const tHow = { id: uid('t'), type:'note', groupId:gWelcome.id, color:'#a9a9b3', w:1,
+      title:'Welcome to Web-Dock',
+      notes:'This is your launchpad.\n\n' +
+            '• Click ✎ to edit in the Inspector.\n' +
+            '• Resize with ◢; size persists per tile.\n' +
+            '• Move Left/Right (in Inspector) to change order.\n' +
+            '• / to search, N to add tile.\n' +
+            '• Double-click Link tile to open viewer.\n' +
+            '• Import/Export to share.\n\n' +
+            'Pro-tip: PalettePilot themes via CSS vars.'
+    };
+    const tLink = { id: uid('t'), type:'link', groupId:gWelcome.id, color:'#ff6b00', title:'AO Items', url:'https://aoitems.com', tags:['ao','docs'], w:1 };
+    /* No h here — will autosize to just fit the video + chrome */
+    const tYT   = { id: uid('t'), type:'youtube', groupId:gMedia.id, color:'#ff5c7c',
+      title:'Rubi-Ka Soundtrack (HD)', url:'https://www.youtube.com/watch?v=fBqYdCGaNEw', w:1 };
+    const tAud  = { id: uid('t'), type:'audio', groupId:gMedia.id, color:'#ffd166', title:'Local Jukebox', w:1 };
+
+    tiles.push(tHow, tLink, tYT, tAud);
+    order.tiles[gWelcome.id].push(tHow.id, tLink.id);
+    order.tiles[gMedia.id].push(tYT.id, tAud.id);
+    save();
+  }
+  if(!order.active) order.active = order.groups[0];
+
+  /* ---------- Render Spaces ---------- */
+  function renderSpaces(){
+    els.spaceList.innerHTML = '';
+    order.groups.map(id => groups.find(g => g.id===id)).filter(Boolean).forEach(g=>{
+      const item = document.createElement('div');
+      item.className = 'space' + (g.id===order.active ? ' active':'');
+      item.draggable = true; item.dataset.id = g.id;
+      item.innerHTML = `<span class="dot"></span><div class="name">${html(g.title)}</div>
+                        <div class="act">
+                          <button class="icon-btn" title="Rename" data-act="rename">✎</button>
+                          <button class="icon-btn" title="Delete" data-act="del">🗑</button>
+                        </div>`;
+      item.addEventListener('click', e=>{ if(e.target.closest('.icon-btn')) return; order.active = g.id; save(); renderBoard(); renderSpaces(); });
+      item.addEventListener('dragstart', e=>{ item.classList.add('drag'); e.dataTransfer.setData('text/plain', g.id) });
+      item.addEventListener('dragend', ()=> item.classList.remove('drag'));
+      item.addEventListener('dragover', e=>{
+        e.preventDefault();
+        const ph = getGroupPlaceholder();
+        const next = e.clientY < item.getBoundingClientRect().top + item.offsetHeight/2 ? item : item.nextSibling;
+        els.spaceList.insertBefore(ph, next);
+      });
+      item.addEventListener('drop', e=>{
+        e.preventDefault();
+        const id = e.dataTransfer.getData('text/plain');
+        order.groups = order.groups.filter(x=>x!==id);
+        const nodes = Array.from(els.spaceList.children);
+        const phIndex = nodes.indexOf(getGroupPlaceholder());
+        order.groups.splice(phIndex,0,id);
+        getGroupPlaceholder().remove();
+        save(); renderSpaces();
+      });
+      item.querySelector('[data-act="rename"]').onclick = (e)=>{
+        e.stopPropagation();
+        const newName = prompt('Rename space:', g.title);
+        if(newName){ g.title = newName.trim() || g.title; save(); renderSpaces(); renderBoard(); }
+      };
+      item.querySelector('[data-act="del"]').onclick = (e)=>{
+        e.stopPropagation();
+        if(!confirm('Delete this space and all its tiles?')) return;
+        const idx = order.groups.indexOf(g.id);
+        order.groups.splice(idx,1);
+        delete order.tiles[g.id];
+        tiles = tiles.filter(t=>t.groupId!==g.id);
+        if(order.active===g.id) order.active = order.groups[0] || null;
+        save(); renderSpaces(); renderBoard();
+      };
+      els.spaceList.appendChild(item);
+    });
+  }
+  let groupPh;
+  function getGroupPlaceholder(){ if(!groupPh){ groupPh = document.createElement('div'); groupPh.className='space placeholder'; groupPh.style.height='42px'; groupPh.style.border='2px dashed var(--grid)' } return groupPh }
+
+  /* ---------- Render Board + Tiles ---------- */
+  function renderBoard(){
+    const g = groups.find(x=>x.id===order.active); if(!g){ els.boardTitle.textContent='—'; els.grid.innerHTML=''; return; }
+    els.boardTitle.textContent = g.title;
+    const q = (els.search.value||'').toLowerCase().trim();
+    const ids = order.tiles[g.id] || [];
+    els.grid.innerHTML = '';
+    ids.map(id => tiles.find(t => t.id===id)).filter(Boolean).filter(t=>{
+      if(!q) return true;
+      const hay = [t.title,t.url,t.notes,...(t.tags||[])].join(' ').toLowerCase();
+      return hay.includes(q);
+    }).forEach(t => {
+      const node = renderTile(t);
+      els.grid.appendChild(node);
+      // Autosize once if no explicit height persisted
+      if(!( 'h' in t )){
+        requestAnimationFrame(()=> autosizeTile(node, t));
+      }
+    });
+  }
+
+  function renderTile(t){
+    const el = document.createElement('div'); el.className='tile'; el.dataset.id = t.id;
+    el.style.gridColumn = `span ${clamp(t.w||1,1,12)}`;
+    if('h' in t) el.style.gridRow = `span ${clamp(t.h||18,8,200)}`;
+
+    const icon = t.type==='note' ? '📝' : t.type==='audio' ? '🎵' : t.type==='youtube' ? '▶️' : `<img src="${fav(t.url)}" onerror="this.style.display='none'">`;
+    el.innerHTML = `
+      <div class="colorbar" style="background:${t.color||'var(--ac)'}"></div>
+      <button class="tile-edit" title="Edit">✎</button>
+      <div class="row">
+        <div class="left"><div class="favicon">${icon}</div><div class="title" title="${html(t.title||'')}">${html(t.title||'')}</div></div>
+      </div>
+      <div class="body"></div>
+      <div class="tagrow">${(t.tags||[]).map(s=>`<span class="tag">${html(s)}</span>`).join('')}</div>
+      <div class="resize" title="Resize"></div>
+      <div class="size-hint" style="display:none">${t.w||1}×${t.h||''}</div>
+    `;
+    const body = el.querySelector('.body');
+
+    if(t.type==='note'){
+      const n = document.createElement('div'); n.className='note'; n.textContent = t.notes||''; body.appendChild(n);
+    }else if(t.type==='youtube'){
+      body.classList.add('media-body');
+      body.appendChild(renderYouTubeBox(t.url));
+    }else if(t.type==='audio'){
+      body.appendChild(renderAudio(t.id));
+    }else{
+      if(t.url){ const u = document.createElement('div'); u.className='url'; u.textContent = t.url; body.appendChild(u); }
+      if(t.notes){ const n = document.createElement('div'); n.className='note'; n.textContent = t.notes; body.appendChild(n); }
+      el.addEventListener('dblclick', ()=>{ if(t.url) openViewer(t.url) });
+    }
+
+    el.querySelector('.tile-edit').onclick = (e)=>{ e.stopPropagation(); selectTile(t.id, true); };
+
+    makeResizable(el, t, el.querySelector('.size-hint'));
+
+    el.addEventListener('contextmenu', e=>{
+      e.preventDefault();
+      showMenu(e.clientX, e.clientY, [
+        t.url ? {label:'Open in Viewer', cmd:()=> openViewer(t.url)} : null,
+        {label:'Duplicate', cmd:()=> duplicateTile(t.id)},
+        {label:'Delete', cmd:()=> deleteTile(t.id)},
+        'sep',
+        {label:'Edit', cmd:()=> selectTile(t.id, true)}
+      ].filter(Boolean));
+    });
+
+    return el;
+  }
+
+  /* ---------- Autosize logic (only when h is not set) ---------- */
+  function autosizeTile(el, tile){
+    // Temporarily grow to measure full intrinsic height
+    const m = measureGrid();
+    const prevRow = el.style.gridRow;
+    const prevVis = el.style.visibility;
+    el.style.visibility = 'hidden';
+    el.style.gridRow = 'span 200'; // plenty of space to expand
+    // Force reflow
+    void el.offsetHeight;
+    // Measure total height (includes video aspect-box)
+    const rect = el.getBoundingClientRect();
+    let rows = Math.ceil((rect.height + m.gapY) / (m.row + m.gapY));
+    rows = clamp(rows, 8, 200);
+    // Apply and persist
+    el.style.gridRow = `span ${rows}`;
+    el.style.visibility = prevVis;
+    tile.h = rows;
+    save();
+  }
+
+  /* ---------- Media helpers ---------- */
+  function ytId(u){
+    try{
+      const x = new URL(u);
+      if(x.hostname.includes('youtu.be'))       return x.pathname.slice(1);
+      if(x.hostname.includes('youtube.com')){
+        if(x.pathname.startsWith('/watch'))     return x.searchParams.get('v') || '';
+        if(x.pathname.startsWith('/shorts/'))   return x.pathname.split('/')[2] || '';
+        if(x.pathname.startsWith('/embed/'))    return x.pathname.split('/')[2] || '';
+      }
+    }catch{}
+    return '';
+  }
+  function renderYouTubeBox(url){
+    const id = ytId(url);
+    const box = document.createElement('div'); box.className='ytbox';
+    if(!id){ box.innerHTML = `<div style="padding:10px;color:var(--dim);font-size:12px">Invalid YouTube URL</div>`; return box; }
+    const src = `https://www.youtube.com/embed/${id}?rel=0&modestbranding=1&playsinline=1`;
+    box.innerHTML = `<iframe loading="lazy" referrerpolicy="strict-origin-when-cross-origin"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+        allowfullscreen src="${src}"></iframe>`;
+    return box;
+  }
+
+  /* ---------- Audio ---------- */
+  function renderAudio(tileId){
+    const box = document.createElement('div'); box.className='player';
+    box.innerHTML = `
+      <div class="controls">
+        <button class="btn" data-prev>⟸</button>
+        <button class="btn" data-play>▶</button>
+        <button class="btn" data-next>⟹</button>
+        <div class="meta" data-now>—</div>
+      </div>
+      <div class="drop" data-drop>Drop audio files here</div>
+      <div class="playlist" data-pl></div>`;
+    const elPl = box.querySelector('[data-pl]'), elNow = box.querySelector('[data-now]'), playBtn = box.querySelector('[data-play]');
+    let list = playlists[tileId] || []; let idx = 0; const audio = new Audio();
+    function savePl(){ playlists[tileId] = list; save() }
+    function renderPl(){ elPl.innerHTML=''; list.forEach((t,i)=>{ const row=document.createElement('div'); row.className='trk'+(i===idx?' active':''); row.innerHTML=`<span class="num">${i+1}</span><span>${html(t.name)}</span>`; row.onclick=()=>{ idx=i; playCur() }; elPl.appendChild(row) }); elNow.textContent = list[idx]?.name || 'No tracks'; }
+    function playCur(){ if(!list.length) return; audio.src = list[idx].dataUrl; audio.play(); renderPl() }
+    async function addFiles(files){ for(const f of Array.from(files||[])){ if(!f.type.startsWith('audio/')) continue; const url=await readURL(f); list.push({name:f.name,type:f.type,dataUrl:url}); } savePl(); renderPl(); if(audio.paused && list.length) playCur() }
+    audio.onplay = ()=> playBtn.textContent='❚❚';
+    audio.onpause = ()=> playBtn.textContent='▶';
+    audio.onended = ()=>{ idx=(idx+1)%list.length; playCur() };
+    playBtn.onclick = ()=> audio.paused ? playCur() : audio.pause();
+    box.querySelector('[data-prev]').onclick = ()=>{ if(!list.length) return; idx=(idx-1+list.length)%list.length; playCur() };
+    box.querySelector('[data-next]').onclick = ()=>{ if(!list.length) return; idx=(idx+1)%list.length; playCur() };
+    const drop = box.querySelector('[data-drop]');
+    drop.ondragover = e=>{ e.preventDefault(); drop.classList.add('drag') };
+    drop.ondragleave = ()=> drop.classList.remove('drag');
+    drop.ondrop = e=>{ e.preventDefault(); drop.classList.remove('drag'); addFiles(e.dataTransfer.files) };
+    renderPl(); return box;
+  }
+  function readURL(file){ return new Promise(res=>{ const r=new FileReader(); r.onload=()=>res(r.result); r.readAsDataURL(file); }) }
+
+  /* ---------- Selection + Inspector ---------- */
+  let selectedTileId = null;
+  function selectTile(id, openInspectorNow){
+    selectedTileId = id;
+    $$('.tile').forEach(n => n.classList.toggle('selected', n.dataset.id===id));
+    if(openInspectorNow) openInspector(id);
+  }
+  function openInspector(id){
+    const t = tiles.find(x=>x.id===id); if(!t){ els.inspector.classList.remove('show'); return; }
+    els.inspector.classList.add('show');
+    els.iType.value = t.type; els.iTitle.value = t.title||''; els.iUrl.value = t.url||''; els.iNotes.value = t.notes||'';
+    els.iTags.value = (t.tags||[]).join(', '); els.iColor.value = t.color||'#ff6b00';
+    els.iW.value = t.w || 1; els.iH.value = t.h || 18;
+    updateInspectorFields();
+  }
+  function updateInspectorFields(){
+    const type = els.iType.value;
+    $$('.inspector [data-for]').forEach(row=>{
+      const allow = row.getAttribute('data-for').split(/\s+/).includes(type);
+      row.style.display = allow ? 'grid' : 'none';
+    });
+  }
+  els.iType.onchange = updateInspectorFields;
+  els.iClose.onclick = ()=> els.inspector.classList.remove('show');
+
+  // Save
+  els.iSave.onclick = ()=>{
+    const t = tiles.find(x=>x.id===selectedTileId); if(!t) return;
+    Object.assign(t, {
+      type: els.iType.value,
+      title: els.iTitle.value.trim() || t.title,
+      url: els.iUrl.value.trim(),
+      notes: els.iNotes.value,
+      tags: els.iTags.value.split(',').map(s=>s.trim()).filter(Boolean),
+      color: els.iColor.value,
+      w: clamp(parseInt(els.iW.value)||1, 1, 12),
+      h: clamp(parseInt(els.iH.value)||18, 8, 200)
+    });
+    save(); renderBoard();
+  };
+  // Duplicate / Delete
+  els.iDuplicate.onclick = ()=> { if(selectedTileId) duplicateTile(selectedTileId) };
+  els.iDelete.onclick = ()=> { if(selectedTileId) { deleteTile(selectedTileId); els.inspector.classList.remove('show'); } };
+
+  // Move Left / Right (order control)
+  els.moveLeft.onclick = ()=> moveTileInOrder(-1);
+  els.moveRight.onclick = ()=> moveTileInOrder(1);
+  function moveTileInOrder(dir){
+    const t = tiles.find(x=>x.id===selectedTileId); if(!t) return;
+    const arr = order.tiles[t.groupId] || [];
+    const idx = arr.indexOf(t.id); if(idx<0) return;
+    const nidx = clamp(idx + dir, 0, arr.length-1);
+    if(nidx === idx) return;
+    arr.splice(idx,1); arr.splice(nidx,0,t.id);
+    save(); renderBoard();
+    requestAnimationFrame(()=> selectTile(t.id, false));
+  }
+
+  /* ---------- Tile ops ---------- */
+  function deleteTile(id){
+    const t = tiles.find(x=>x.id===id); if(!t) return;
+    order.tiles[t.groupId] = (order.tiles[t.groupId]||[]).filter(x=>x!==id);
+    tiles = tiles.filter(x=>x.id!==id);
+    delete playlists[id];
+    save(); renderBoard();
+  }
+  function duplicateTile(id){
+    const t = tiles.find(x=>x.id===id); if(!t) return;
+    const cp = JSON.parse(JSON.stringify(t)); cp.id = uid('t'); cp.title = (t.title||'Untitled') + ' (Copy)';
+    tiles.push(cp);
+    const arr = order.tiles[t.groupId]||[]; const idx = arr.indexOf(t.id);
+    arr.splice(idx+1,0,cp.id);
+    if(t.type==='audio' && playlists[id]) playlists[cp.id] = JSON.parse(JSON.stringify(playlists[id]));
+    save(); renderBoard();
+  }
+
+  /* ---------- Resizer (grid spans) ---------- */
+  function makeResizable(el, tile, hintEl){
+    const res = el.querySelector('.resize');
+    res.addEventListener('pointerdown', e=>{
+      e.preventDefault(); res.setPointerCapture(e.pointerId);
+      const startX = e.clientX, startY = e.clientY;
+      const startW = tile.w || 1, startH = tile.h || 18;
+      const metrics = measureGrid();
+      hintEl.style.display='block';
+
+      function onMove(ev){
+        const dx = ev.clientX - startX;
+        const dy = ev.clientY - startY;
+        const w = clamp(Math.round(startW + dx / (metrics.col + metrics.gapX)), 1, metrics.cols);
+        const h = clamp(Math.round(startH + dy / (metrics.row + metrics.gapY)), 8, 200);
+        el.style.gridColumn = `span ${w}`;
+        el.style.gridRow    = `span ${h}`;
+        hintEl.textContent  = `${w}×${h}`;
+      }
+      function onUp(ev){
+        res.releasePointerCapture(ev.pointerId);
+        const styles = getComputedStyle(el);
+        const w = parseInt(styles.gridColumnEnd.replace('span ','').trim()) || (tile.w||1);
+        const h = parseInt(styles.gridRowEnd.replace('span ','').trim()) || (tile.h||18);
+        tile.w = clamp(w,1,measureGrid().cols); tile.h = clamp(h,8,200);
+        hintEl.style.display='none';
+        save();
+      }
+      res.addEventListener('pointermove', onMove);
+      res.addEventListener('pointerup', onUp, { once:true });
+      res.addEventListener('lostpointercapture', onUp, { once:true });
+    });
+  }
+  function measureGrid(){
+    const s = getComputedStyle(els.grid);
+    const gapX = parseFloat(s.columnGap)||parseFloat(s.gap)||12;
+    const gapY = parseFloat(s.rowGap)||parseFloat(s.gap)||12;
+    const probe = document.createElement('div');
+    probe.style.visibility='hidden'; probe.style.pointerEvents='none';
+    probe.style.gridColumn='span 1'; probe.style.gridRow='span 1';
+    els.grid.appendChild(probe);
+    const rect = probe.getBoundingClientRect();
+    const col = rect.width;
+    const row = parseFloat(getComputedStyle(els.grid).gridAutoRows)||10;
+    probe.remove();
+    const cols = Math.max(1, Math.round((els.grid.clientWidth + gapX) / (col + gapX)));
+    return { col, row, gapX, gapY, cols };
+  }
+
+  /* ---------- Viewer ---------- */
+  function openViewer(u){
+    const url = norm(u);
+    els.vFrame.src = url;
+    els.vUrl.value = url==='about:blank' ? '' : url;
+    $('#viewer').classList.add('show');
+  }
+  els.vClose.onclick = ()=> $('#viewer').classList.remove('show');
+  els.vOpen.onclick = ()=> { const u=els.vFrame.src; if(u && u!=='about:blank') window.open(u, '_blank', 'noopener') };
+  els.vReload.onclick = ()=> { try{ els.vFrame.contentWindow?.location.reload() }catch{ els.vFrame.src = els.vFrame.src } };
+  els.vBack.onclick = ()=> { try{ els.vFrame.contentWindow?.history.back() }catch{} };
+  els.vFwd.onclick  = ()=> { try{ els.vFrame.contentWindow?.history.forward() }catch{} };
+  els.vUrl.addEventListener('keydown', e=>{ if(e.key==='Enter') openViewer(els.vUrl.value) });
+
+  /* ---------- Add Tile / Space ---------- */
+  $('#btnNewTile').onclick = ()=> addTile();
+  els.addSpace.onclick = ()=> addGroup();
+
+  function addTile(prefGroupId){
+    const gid = prefGroupId || order.active || order.groups[0];
+    // No h => will autosize to content
+    const t = { id: uid('t'), type:'link', title:'New Tile', url:'', notes:'', tags:[], color:'#ff6b00', groupId: gid, w:1 };
+    tiles.push(t);
+    order.tiles[gid] = order.tiles[gid] || [];
+    order.tiles[gid].push(t.id);
+    save(); renderBoard(); selectTile(t.id, true);
+  }
+  function addGroup(){
+    const g = { id: uid('g'), title: 'New Space' };
+    groups.push(g);
+    order.groups.push(g.id);
+    order.tiles[g.id] = [];
+    order.active = g.id;
+    save(); renderSpaces(); renderBoard();
+  }
+
+  /* ---------- Search & keys ---------- */
+  els.search.addEventListener('input', renderBoard);
+  window.addEventListener('keydown', e=>{
+    if(e.key==='/' && document.activeElement!==els.search){ e.preventDefault(); els.search.focus(); return; }
+    if(e.key==='n' && !e.ctrlKey && !e.metaKey && document.activeElement.tagName!=='INPUT' && document.activeElement.tagName!=='TEXTAREA'){ addTile(); return; }
+    if(e.key==='Escape'){
+      if($('#viewer').classList.contains('show')) { $('#viewer').classList.remove('show'); return; }
+      if(els.inspector.classList.contains('show')) { els.inspector.classList.remove('show'); return; }
+      if(els.menu.style.display==='block'){ els.menu.style.display='none'; return; }
+    }
+  });
+
+  /* ---------- Context menu ---------- */
+  function showMenu(x,y,items){
+    const m = els.menu;
+    m.innerHTML = items.map(it=>{
+      if(it==='sep') return '<div class="sep"></div>';
+      return `<div class="item">${html(it.label)}</div>`;
+    }).join('');
+    m.style.left = x+'px'; m.style.top = y+'px'; m.style.display='block';
+    const wires = items.filter(i=>i!=='sep').map((it,i)=>({node:m.children[i], cmd:it.cmd}));
+    wires.forEach(w=> w.node.onclick = ()=>{ m.style.display='none'; w.cmd?.() });
+    document.addEventListener('click', ()=> m.style.display='none', { once:true });
+  }
+
+  /* ---------- Boot ---------- */
+  renderSpaces(); renderBoard();
+
+})();
+</script>

@@ -1,0 +1,84 @@
+<!--?xml version="1.0" encoding="UTF-8"?-->
+<svg width="512" height="512" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Web-Dock (Animated)">
+  <title>RubiKitOS · Web-Dock (Animated)</title>
+  <style>
+    :root{
+      --wd-bg1:#171a24; --wd-bg2:#0b0c10;
+      --wd-fg:#eef0f6; --wd-dm:#9aa1b4;
+      --wd-ac:#ff6b00; --wd-ac2:#ffa445;
+      --wd-r:220px;
+      --beat-min:.92;   /* scale range */
+      --beat-max:1.06;
+      --beat-dur:1.35s; /* base duration */
+    }
+    .bg{ fill:url(#bgGrad) }
+    .tile{ rx:24; ry:24; transform-box:fill-box; transform-origin:50% 50%;
+           animation: beat var(--beat-dur) ease-in-out infinite;
+           filter:url(#ds) }
+    .s1{ fill:var(--wd-fg,#eef0f6) }
+    .s2{ fill:var(--wd-dm,#9aa1b4) }
+    .sa{ fill:var(--wd-ac,#ff6b00) }
+    .sb{ fill:var(--wd-ac2,#ffa445) }
+    .glow{ mix-blend-mode:screen; opacity:.16 }
+
+    @keyframes beat{
+      0%   { transform:scale(var(--beat-min)); opacity:.92 }
+      50%  { transform:scale(var(--beat-max)); opacity:1 }
+      100% { transform:scale(var(--beat-min)); opacity:.92 }
+    }
+
+    /* Staggered “random” pattern via unique delays &amp; durations */
+    .c1{ animation-delay:.00s; animation-duration:calc(var(--beat-dur) * 1.00) }
+    .c2{ animation-delay:.23s; animation-duration:calc(var(--beat-dur) * 1.15) }
+    .c3{ animation-delay:.48s; animation-duration:calc(var(--beat-dur) * 0.95) }
+    .c4{ animation-delay:.12s; animation-duration:calc(var(--beat-dur) * 1.20) }
+    .c5{ animation-delay:.37s; animation-duration:calc(var(--beat-dur) * 0.90) }
+    .c6{ animation-delay:.69s; animation-duration:calc(var(--beat-dur) * 1.10) }
+    .c7{ animation-delay:.31s; animation-duration:calc(var(--beat-dur) * 1.05) }
+    .c8{ animation-delay:.57s; animation-duration:calc(var(--beat-dur) * 0.88) }
+    .c9{ animation-delay:.79s; animation-duration:calc(var(--beat-dur) * 1.25) }
+
+    /* Reduced motion: freeze the layout (no pulsing) */
+    @media (prefers-reduced-motion: reduce){
+      .tile{ animation: none }
+    }
+
+    .ring { fill:none; stroke:var(--wd-ac,#ff6b00); stroke-width:12; opacity:.08 }
+  </style>
+
+  <defs>
+    <linearGradient id="bgGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="var(--wd-bg1,#171a24)"></stop>
+      <stop offset="100%" stop-color="var(--wd-bg2,#0b0c10)"></stop>
+    </linearGradient>
+    <filter id="ds" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="8" stdDeviation="16" flood-color="black" flood-opacity="0.35"></feDropShadow>
+    </filter>
+  </defs>
+
+  <rect x="0" y="0" width="1024" height="1024" rx="var(--wd-r)" ry="var(--wd-r)" class="bg"></rect>
+
+  <!-- Pulsing grid (same layout as static; each cell gets a unique class c1..c9) -->
+  <g transform="translate(160,160)">
+    <!-- Row 1 -->
+    <rect class="tile s1 c1" x="0" y="0" width="300" height="300" rx="26" ry="26"></rect>
+    <rect class="tile sa c2" x="324" y="0" width="220" height="140" rx="22" ry="22"></rect>
+    <rect class="tile s2 c3" x="564" y="0" width="140" height="220" rx="20" ry="20"></rect>
+
+    <!-- Row 2 -->
+    <rect class="tile s2 c4" x="0" y="324" width="220" height="220" rx="22" ry="22"></rect>
+    <rect class="tile sb c5" x="244" y="244" width="240" height="300" rx="26" ry="26"></rect>
+    <rect class="tile s1 c6" x="504" y="244" width="200" height="140" rx="20" ry="20"></rect>
+
+    <!-- Row 3 -->
+    <rect class="tile s1 c7" x="0" y="564" width="160" height="140" rx="18" ry="18"></rect>
+    <rect class="tile s2 c8" x="184" y="564" width="200" height="200" rx="22" ry="22"></rect>
+    <rect class="tile sa c9" x="404" y="564" width="300" height="200" rx="24" ry="24"></rect>
+  </g>
+
+  <!-- Subtle accent rings for depth -->
+  <g class="glow">
+    <circle class="ring" cx="512" cy="512" r="320"></circle>
+    <circle class="ring" cx="512" cy="512" r="440"></circle>
+  </g>
+</svg>
