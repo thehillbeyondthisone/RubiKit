@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="en" data-theme="inferno">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>RubiKitOS · Boot</title>
+  <meta name="color-scheme" content="dark light" />
+  <style>
+    :root{
+      /* Inferno palette (PalettePilot can overwrite via CSS vars) */
+      --rk-bg-0:#0b0c10; --rk-bg-1:#111319; --rk-text:#e7e7ec; --rk-subtle:#b9bdc7;
+      --rk-accent:#ff4d2e; --rk-accent-2:#ffb400; --rk-accent-3:#ff6b00;
+      --rk-border:rgba(255,255,255,.12); --rk-shadow:rgba(0,0,0,.55);
+      --rk-font-ui:ui-sans-serif,Inter,system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;
+      --rk-font-mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    }
+    html,body{height:100%;margin:0;background:
+      radial-gradient(1200px 800px at 70% -10%,rgba(255,77,46,.15),transparent 60%),
+      radial-gradient(900px 700px at 10% 110%,rgba(255,180,0,.12),transparent 60%),
+      var(--rk-bg-0);
+      color:var(--rk-text);font-family:var(--rk-font-ui);overflow:hidden}
+    .wrap{position:relative;inset:0;display:grid;place-items:center;height:100%}
+    .card{
+      width:min(720px,92vw);height:min(420px,68vh);
+      border:1px solid var(--rk-border);border-radius:20px;overflow:hidden;
+      background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.015));
+      box-shadow:0 40px 120px var(--rk-shadow);
+      position:relative;display:grid;grid-template-rows:auto 1fr auto;
+    }
+    .top{
+      display:flex;align-items:center;justify-content:space-between;
+      padding:14px 16px;border-bottom:1px solid var(--rk-border);
+      background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,0));
+      backdrop-filter:blur(10px)
+    }
+    .brand{display:flex;gap:10px;align-items:center;font-weight:700;letter-spacing:.4px}
+    .brand .dot{width:12px;height:12px;border-radius:50%;
+      background:conic-gradient(from 200deg,var(--rk-accent),var(--rk-accent-2),var(--rk-accent));
+      box-shadow:0 0 18px var(--rk-accent)}
+    .btn{
+      appearance:none;border:1px solid var(--rk-border);background:rgba(255,255,255,.05);
+      color:var(--rk-text);padding:8px 12px;border-radius:10px;font-size:14px;cursor:pointer
+    }
+    .btn:hover{border-color:rgba(255,255,255,.2)}
+    .stage{position:relative;display:grid;place-items:center;overflow:hidden}
+    /* LOGO build: line text -> glyph disc */
+    .logo{
+      position:relative;display:grid;place-items:center;gap:18px;text-align:center
+    }
+    .word{
+      font-family:var(--rk-font-mono);font-weight:700;letter-spacing:.22em;
+      color:var(--rk-subtle); text-transform:uppercase; font-size:20px; opacity:.9;
+      transform:translateY(8px);filter:drop-shadow(0 6px 24px rgba(0,0,0,.35));
+      animation: wordUp .8s ease-out forwards .15s
+    }
+    @keyframes wordUp{to{transform:translateY(0);opacity:1}}
+    .lines{display:flex;gap:8px}
+    .lines i{
+      display:block;width:46px;height:2px;background:linear-gradient(90deg,var(--rk-accent),var(--rk-accent-2));
+      opacity:.0;transform:scaleX(.2);transform-origin:left;
+      animation: lineOn .6s cubic-bezier(.2,.7,.2,1) forwards
+    }
+    .lines i:nth-child(1){animation-delay:.15s}
+    .lines i:nth-child(2){animation-delay:.28s}
+    .lines i:nth-child(3){animation-delay:.41s}
+    @keyframes lineOn{to{opacity:.9;transform:scaleX(1)}}
+
+    .disc{
+      width:148px;height:148px;border-radius:50%;
+      background:conic-gradient(var(--rk-accent),var(--rk-accent-2),var(--rk-accent));
+      position:relative;box-shadow:0 0 64px rgba(255,77,46,.35), inset 0 0 22px rgba(0,0,0,.25);
+      transform:scale(.86);opacity:0; animation: discIn .9s ease-out forwards .75s
+    }
+    @keyframes discIn{to{transform:scale(1);opacity:1}}
+    .disc::after{
+      content:"";position:absolute;inset:14px;border-radius:50%;
+      background:radial-gradient(60% 60% at 50% 40%,rgba(0,0,0,.35),rgba(0,0,0,.55));
+      border:1px solid rgba(255,255,255,.08)
+    }
+    .ring{
+      position:absolute;inset:-6px;border-radius:50%;
+      border:2px dashed rgba(255,255,255,.25);animation:ring 8s linear infinite;pointer-events:none
+    }
+    @keyframes ring{to{transform:rotate(360deg)}}
+
+    .progress{
+      display:flex;gap:8px;align-items:center;justify-content:center;margin-top:14px;
+      font-size:12px;color:var(--rk-subtle)
+    }
+    .dot{width:6px;height:6px;border-radius:50%;background:var(--rk-accent);opacity:.3}
+    .dot.on{opacity:1;box-shadow:0 0 14px var(--rk-accent)}
+    .msg{font-size:12px;color:var(--rk-subtle);margin-top:6px}
+
+    .bottom{
+      display:flex;align-items:center;justify-content:space-between;padding:10px 14px;
+      border-top:1px solid var(--rk-border);font-size:12px;color:var(--rk-subtle)
+    }
+    .mono{font-family:var(--rk-font-mono)}
+    .hint{opacity:.85}
+
+    /* Reduced motion */
+    @media (prefers-reduced-motion: reduce){
+      .lines i,.disc,.ring{animation:none}
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card" role="application" aria-label="RubiKitOS Boot">
+      <div class="top">
+        <div class="brand"><div class="dot"></div><div>RubiKitOS</div></div>
+        <button class="btn" id="skipBtn" title="Skip boot">Skip</button>
+      </div>
+
+      <div class="stage">
+        <div class="logo" aria-live="polite">
+          <div class="word">R U B I K I T O S</div>
+          <div class="lines" aria-hidden="true"><i></i><i></i><i></i></div>
+          <div class="disc" aria-hidden="true"><div class="ring"></div></div>
+          <div class="progress">
+            <span class="dot" id="d1"></span><span class="dot" id="d2"></span><span class="dot" id="d3"></span><span class="dot" id="d4"></span>
+          </div>
+          <div class="msg mono" id="bootMsg">Initializing subsystems…</div>
+        </div>
+      </div>
+
+      <div class="bottom">
+        <span class="hint">Inferno theme • PalettePilot ready</span>
+        <span class="mono" id="timer">00:00</span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // PalettePilot hook — allow external themers to apply CSS vars
+    (function(){
+      const applyTheme = (vars={})=>{ for(const k in vars){ document.documentElement.style.setProperty(k, vars[k]); } };
+      window.addEventListener('palettepilot-apply', e=>{ if(e?.detail?.vars) applyTheme(e.detail.vars); });
+      window.RubiBoot = { applyTheme };
+    })();
+
+    // Boot choreography
+    (function(){
+      const STEPS = [
+        {t:400,  msg:'Loading kernel modules…', dot:1},
+        {t:900,  msg:'Mounting virtual file systems…', dot:2},
+        {t:1500, msg:'Starting UI compositor…', dot:3},
+        {t:2200, msg:'Bridging module runtime…', dot:4},
+        {t:2900, msg:'Finalizing…', dot:4},
+        {t:3600, msg:'Ready.'}
+      ];
+      const bootMsg = document.getElementById('bootMsg');
+      const dots = [null, 'd1','d2','d3','d4'].map(id => id ? document.getElementById(id) : null);
+      const timerEl = document.getElementById('timer');
+      const skipBtn = document.getElementById('skipBtn');
+
+      let start = performance.now(), done=false, tm=null;
+      function updTimer(){
+        const s = Math.min( Math.floor((performance.now()-start)/1000), 99 );
+        const mm = String(Math.floor(s/60)).padStart(2,'0');
+        const ss = String(s%60).padStart(2,'0');
+        timerEl.textContent = `${mm}:${ss}`;
+      }
+      tm = setInterval(updTimer, 250);
+
+      STEPS.forEach(step=>{
+        setTimeout(()=>{
+          if(done) return;
+          bootMsg.textContent = step.msg;
+          if(step.dot && dots[step.dot]) dots[step.dot].classList.add('on');
+        }, step.t);
+      });
+
+      const forward = () => {
+        if(done) return;
+        done = true; clearInterval(tm);
+        // Preserve query/hash when forwarding to ../index.html
+        const q = location.search || '';
+        const h = location.hash || '';
+        location.replace(`../index.html${q}${h}`);
+      };
+
+      // Auto-forward after last step (4.0s)
+      const total = 4000;
+      const prefReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      setTimeout(forward, prefReduced ? 1000 : total);
+
+      skipBtn.addEventListener('click', forward);
+    })();
+  </script>
+</body>
+</html>

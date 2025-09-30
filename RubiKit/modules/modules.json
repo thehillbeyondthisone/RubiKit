@@ -1,0 +1,16 @@
+{
+  "modules": [
+    {
+      "id": "notumhud",
+      "name": "NotumHUD",
+      "icon": "icons/notumhud-animated.svg",
+      "description": "Overlay HUD for AO stats with live metrics.",
+      "tags": [
+        "hud",
+        "overlay",
+        "metrics"
+      ],
+      "href": "notumHUD/index.html"
+    },
+  ]
+}
