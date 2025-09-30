@@ -8,7 +8,7 @@
    - Type `/rubi` in-game.  
    - If the UI doesn’t open with this command, navigate to [http://127.0.0.1:8780](http://127.0.0.1:8780) in Chrome.  
 
-## Using the Builder
+## Loading Modules
 
 1. Open **Builder → Choose Folder**.  
    - *Tip:* Chrome/Edge support the folder picker used by the Builder.  
