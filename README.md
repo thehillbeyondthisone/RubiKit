@@ -18,7 +18,10 @@
 3. Watch the **Builder Log** for “✓ …” lines and see the generated manifest JSON appear in the editor.  
 4. In the Builder:  
    - Click **Apply to Runtime** → RubiKit loads the manifest immediately into the dashboard.  
-   - Click **Update JSON** → caches the manifest in `localStorage`, so a normal reload keeps it until you clear it.  
+   - Click **Update JSON** → caches the manifest in `localStorage`, so it should persist until cleared.
+  
+   ![module_selection](https://github.com/user-attachments/assets/2f27c5ae-ae2b-45ac-9e08-df5df02f3b67)
+
 
 ## Load Order
 
