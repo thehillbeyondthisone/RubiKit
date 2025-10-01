@@ -12,17 +12,5 @@
       ],
       "href": "notumHUD/index.html"
     },
-    {
-      "id": "ascension-license-issuer",
-      "name": "Ascension License Issuer",
-      "icon": "🔑",
-      "description": "Offline RSA-XML license generator for Ascension. Sign timed licenses (≤12h) and paste in-game with /license <token>.",
-      "tags": [
-        "license",
-        "security",
-        "tool"
-      ],
-      "href": "ascension-license-issuer/index.html"
-    }
   ]
 }
