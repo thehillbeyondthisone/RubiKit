@@ -12,5 +12,13 @@
       ],
       "href": "notumHUD/index.html"
     },
+        {
+      "id": "webdock",
+      "name": "webdock",
+      "icon": "icons/web-dock-animated.svg",
+      "description": "Window nesting",
+      "tags": [],
+      "href": "WebDock/index.html"
+    },
   ]
 }
