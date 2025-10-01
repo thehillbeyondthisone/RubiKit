@@ -7,82 +7,124 @@
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <div class="card" title="This tool creates signed, offline licenses for Ascension using RSA XML keys. No network required.">
-    <h1>Ascension License Issuer (Offline · RSA XML)</h1>
+  <div class="card">
+    <h1>🔐 Ascension License Issuer</h1>
+    <p class="subtitle">Generate offline RSA-signed licenses for your Ascension plugin</p>
 
-    <!-- HOW-TO PANEL -->
-    <section class="section" aria-label="How to use">
+    <!-- STEP 1: SETUP -->
+    <section class="section">
+      <h2>📋 Step 1: First-Time Setup</h2>
       <details open>
-        <summary>How it works & quick start</summary>
-        <ol class="howto">
-          <li><strong>Make or load your RSA PRIVATE key</strong> below. You can generate one here (XML) or paste an existing <code>&lt;RSAKeyValue&gt;</code> and click <strong>Import</strong>.</li>
-          <li>Click <strong>Copy Public Key (XML)</strong> and paste it into the plugin’s <code>PublicKeyXml</code> constant (then rebuild).</li>
-          <li>Set a <strong>Build Salt</strong> (generate here or paste your existing one). This value must match the plugin.</li>
-          <li>Enter a <strong>character name</strong> and choose a <strong>license time</strong> (≤ 12 hours). Click <strong>Sign Token</strong> and paste it in-game.</li>
-        </ol>
+        <summary>Click here for setup instructions (one-time only)</summary>
+        <div class="instructions">
+          <ol class="howto">
+            <li><strong>Generate your keypair:</strong> Click "Generate New RSA Keypair" below. This creates a unique private/public key pair in your browser.</li>
+            <li><strong>Save your private key:</strong> Click "Export Private Key" to download it. Keep this file SECURE - it's needed to generate licenses!</li>
+            <li><strong>Copy the public key:</strong> Click "Copy Public Key (XML)" and paste it into your plugin's <code>Ascension.cs</code> file, replacing the <code>PublicKeyXml</code> constant.</li>
+            <li><strong>Rebuild your plugin:</strong> Compile the plugin with the new public key so it can verify licenses.</li>
+            <li><strong>Done!</strong> You can now generate licenses for any character, anytime.</li>
+          </ol>
+          <div class="warning">
+            ⚠️ <strong>Security Note:</strong> Never share your private key! Only the public key goes in the plugin. The private key stays with you to sign licenses.
+          </div>
+        </div>
       </details>
     </section>
 
-    <!-- KEY MANAGEMENT -->
+    <!-- STEP 2: KEY MANAGEMENT -->
     <section class="section">
-      <h3>Key Management (RSA XML)</h3>
-
-      <div class="row" title="Generate a new 2048-bit RSA keypair in your browser. Private stays local if 'remember' is checked.">
-        <button id="genRsa">Generate New RSA Keypair (2048)</button>
-        <button id="copyPrivXml" title="Copy the PRIVATE KEY XML currently loaded (or generated).">Copy Private Key (XML)</button>
-        <button id="copyPubXml" title="Copy PUBLIC KEY XML derived from the private key. Use this in the plugin.">Copy Public Key (XML)</button>
-        <button id="exportPrivXml" title="Download PRIVATE KEY XML to a file. Keep it secret.">Export Private Key</button>
-        <button id="exportPubXml" title="Download PUBLIC KEY XML to a file.">Export Public Key</button>
-      </div>
+      <h2>🔑 Step 2: Key Management</h2>
 
       <div class="row">
-        <textarea id="privXml" rows="8"
-          placeholder="Paste PRIVATE KEY XML here (full &lt;RSAKeyValue&gt; with D, P, Q, DP, DQ, InverseQ) to import, or leave empty and click 'Generate New RSA Keypair'."
-          title="Paste the PRIVATE KEY XML (includes D, P, Q, DP, DQ, InverseQ)."></textarea>
+        <button id="genRsa" class="btn-primary">🎲 Generate New RSA Keypair (2048)</button>
       </div>
 
+      <div id="keystatus" class="status">No key loaded. Generate a new keypair or import an existing one below.</div>
+
+      <details>
+        <summary>Advanced: Import existing private key</summary>
+        <div class="row" style="margin-top: 12px;">
+          <textarea id="privXml" rows="6"
+            placeholder="Paste your PRIVATE KEY XML here (includes D, P, Q, etc.) and click Import below."
+            title="Paste the full private key XML"></textarea>
+        </div>
+        <div class="row">
+          <button id="importPrivXml">Import Private Key (XML)</button>
+          <label>
+            <input type="checkbox" id="remember" checked /> Remember in this browser
+          </label>
+        </div>
+      </details>
+
+      <h3 style="margin-top: 20px;">Public Key (for plugin)</h3>
       <div class="row">
-        <button id="importPrivXml" title="Import PRIVATE KEY from the XML above for signing.">Import Private Key (XML)</button>
-        <label title="If checked, the private key XML is stored in localStorage on this device.">
-          <input type="checkbox" id="remember" checked /> remember in this browser
-        </label>
+        <textarea id="pubXmlOut" rows="3" readonly
+          placeholder="Public key will appear here. Copy this to your plugin's PublicKeyXml constant."></textarea>
       </div>
-
-      <div id="keystatus" class="status">No key loaded.</div>
-
       <div class="row">
-        <textarea id="pubXmlOut" rows="4" readonly
-          placeholder="Public key XML will appear here after copy/export."
-          title="This is the PUBLIC KEY XML that must be in the plugin."></textarea>
+        <button id="copyPubXml">📋 Copy Public Key (XML)</button>
+        <button id="exportPubXml">💾 Export Public Key</button>
+        <button id="exportPrivXml">🔒 Export Private Key</button>
       </div>
     </section>
 
-    <!-- SALT BUILDER -->
-    <section class="section" aria-label="Salt Builder">
-      <h3>Build Salt</h3>
+    <!-- STEP 3: GENERATE LICENSE -->
+    <section class="section">
+      <h2>✨ Step 3: Generate License</h2>
+
       <div class="row">
-        <input id="buildSalt" type="text"
-               title="Shared secret used to compute tick. Must match the plugin constant exactly."
-               placeholder="Build salt (GUID or random hex)."/>
-        <button id="genSaltGuid" title="Generate a random GUID salt.">Generate GUID</button>
-        <button id="genSaltHex" title="Generate 32 random bytes as hex.">Generate 32B Hex</button>
-        <button id="copySalt" title="Copy current salt to clipboard.">Copy Salt</button>
+        <label>Character Name</label>
+        <input id="character" type="text" placeholder="Enter exact character name" 
+               title="Enter the exact in-game character name (case-sensitive)" />
       </div>
-      <small class="status">Set this to the same value in your plugin’s <code>BuildSalt</code> constant.</small>
+
+      <div class="row">
+        <label>Expiration Date</label>
+        <input id="expDate" type="date" title="License will expire at midnight UTC on this date" />
+      </div>
+
+      <div class="row">
+        <label>Features (optional)</label>
+        <input id="features" type="text" placeholder="e.g., premium, beta-access" 
+               title="Optional feature flags for the license" />
+      </div>
+
+      <div class="row">
+        <button id="issue" class="btn-primary">🎫 Generate License</button>
+        <button id="clear">🗑️ Clear</button>
+      </div>
+
+      <div id="result" class="result hidden">
+        <h3>License Generated! 🎉</h3>
+        <div class="result-info">
+          <p><strong>Character:</strong> <span id="oChar">-</span></p>
+          <p><strong>Expires:</strong> <span id="oExp">-</span></p>
+        </div>
+        <div class="row">
+          <textarea id="token" rows="4" readonly
+            placeholder="License will appear here"></textarea>
+        </div>
+        <div class="row">
+          <button id="copy" class="btn-primary">📋 Copy License</button>
+        </div>
+        <div class="instructions" style="margin-top: 16px;">
+          <p><strong>How to use in-game:</strong></p>
+          <ol>
+            <li>Copy the license above</li>
+            <li>In-game, type: <code>/asc license set &lt;paste license here&gt;</code></li>
+            <li>Verify with: <code>/asc status</code></li>
+          </ol>
+        </div>
+      </div>
     </section>
 
-    <!-- LICENSE ISSUE -->
-    <section class="section">
-      <h3>Issue License</h3>
+    <footer>
+      <p>Ascension License Issuer v2.0 • Offline RSA-SHA256 signing • Your keys never leave this browser</p>
+    </footer>
+  </div>
 
-      <div class="row">
-        <label title="Exact in-game character name.">Character</label>
-        <input id="character" placeholder="Exact character name" title="Type the exact character name the license is for." />
-      </div>
+  <div id="rk-toasts" aria-live="polite" aria-atomic="true"></div>
 
-      <div class="row" title="Set a duration up to 12 hours total (hours + minutes).">
-        <label>License Time</label>
-        <div class="row time-row">
-          <input id="hours" type="number" min="0" max="12" value="1" style="max-width:110px"
-                 title="Hours (0–12). Total time will be capped at 12 hours." />
-         
+  <script src="script.js"></script>
+</body>
+</html>
