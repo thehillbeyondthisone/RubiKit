@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>NotumHUD</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Aldrich&family=Exo+2:wght@400;700&family=Fira+Code&family=Orbitron:wght@700&family=Roboto+Mono&family=Roboto+Slab&family=Share+Tech+Mono&family=VT323&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <svg width="0" height="0" style="position:absolute; visibility: hidden;">
+    <defs>
+      <linearGradient id="hpGradient"><stop offset="0%" stop-color="var(--hp-secondary)"/><stop offset="100%" stop-color="var(--hp-primary)"/></linearGradient>
+      <linearGradient id="nanoGradient"><stop offset="0%" stop-color="var(--nano-secondary)"/><stop offset="100%" stop-color="var(--nano-primary)"/></linearGradient>
+    </defs>
+  </svg>
+
+  <template id="template-chip">
+    <div class="chip">
+      <b></b>
+      <span></span>
+    </div>
+  </template>
+  <template id="template-kv">
+    <div class="kv" data-name="">
+      <span class="name"></span>
+      <div class="kv-details">
+        <span class="val"></span>
+        <select class="category-select"></select>
+      </div>
+    </div>
+  </template>
+  <template id="template-pin">
+     <div class="pin">
+      <b></b>
+      <span class="val"></span>
+    </div>
+  </template>
+
+  <div class="app">
+    <div id="app-background"></div>
+
+    <header class="topbar">
+      <div class="logo">
+        <h1>NOTUM<b>HUD</b></h1>
+      </div>
+      <div class="status-indicator">
+        <span id="statusText">Connecting...</span>
+        <div id="dot" class="dot"></div>
+      </div>
+    </header>
+
+    <div class="hud-grid-container">
+      <aside class="grid-sidebar">
+        <div class="sidebar-panel settings-panel">
+          <h2 class="panel-title">Settings</h2>
+          <div class="controls-grid">
+            <label for="theme">Theme</label>
+            <select id="theme">
+              <option value="theme-notum">Notum</option>
+              <option value="theme-inferno">Inferno</option>
+              <option value="theme-nixie">Nixie</option>
+              <option value="theme-dark">Terminal</option>
+              <option value="theme-light">Paper</option>
+              <option value="theme-monokai">Monokai</option>
+            </select>
+
+            <label for="font">Font</label>
+            <select id="font">
+              <option value="font-default">Default</option>
+              <option value="font-sci-fi">Sci-Fi (Exo 2)</option>
+              <option value="font-serif">Serif (Roboto Slab)</option>
+              <option value="font-mono">Mono (Fira Code)</option>
+              <option value="font-tech">Tech (Share Tech)</option>
+              <option value="font-roboto-mono">Roboto Mono</option>
+              <option value="font-aldrich">Aldrich</option>
+              <option value="font-vt323">VT323 (Pixel)</option>
+            </select>
+
+            <label for="font-size">Scale</label>
+            <input type="range" id="font-size" min="80" max="130" value="100">
+
+          </div>
+          <div class="checkbox-group">
+            <label><input type="checkbox" id="compact-toggle"> Compact Mode</label>
+            <label><input type="checkbox" id="edit-mode-toggle"> Edit Mode</label>
+          </div>
+        </div>
+
+        <div class="sidebar-panel pinned-panel">
+          <h2 class="panel-title">Pinned Stats</h2>
+          <div id="pins" class="scroller"></div>
+        </div>
+      </aside>
+
+      <main class="grid-main">
+        <div class="core-matrix-panel">
+          <div class="core-stats">
+            <div class="stat-box"><div class="stat-label">Add All Offense</div><div id="aao" class="numeric-box">–</div></div>
+            <div class="stat-box"><div class="stat-label">Add All Defense</div><div id="aad" class="numeric-box">–</div></div>
+            <div class="stat-box"><div class="stat-label">Critical Inc.</div><div id="crit" class="numeric-box">–</div></div>
+            <div class="stat-box"><div class="stat-label">XP Modifier</div><div id="xpmod" class="numeric-box">–</div></div>
+          </div>
+        </div>
+        <div class="stat-module damage-module"><h3 class="module-title">+Damage Modifiers</h3><div id="dmgchips" class="chips scroller"></div></div>
+        <div class="stat-module ac-module"><h3 class="module-title">Armor Classes</h3><div id="acs" class="acgrid scroller"></div></div>
+      </main>
+
+      <div class="vitals-cluster">
+        <div id="bar-container">
+            <div class="resource-bar"><div class="bar-label"><span>HEALTH</span><span id="hptext">-- / --</span></div><div class="bar"><div id="hpbar" class="barfill"></div></div></div>
+            <div class="resource-bar"><div class="bar-label"><span>NANO</span><span id="nanotext">-- / --</span></div><div class="bar"><div id="nanobar" class="barfill"></div></div></div>
+        </div>
+      </div>
+
+      <div class="grid-browser">
+        <div class="browser-panel">
+          <h2 class="panel-title">Stats Browser</h2>
+          <input id="filter" class="browser-filter" placeholder="Filter stats..." type="text">
+          <div class="browser-content">
+            <nav id="browser-nav" class="browser-nav">
+              </nav>
+            <div id="browser-lists" class="browser-lists scroller">
+              </div>
+          </div>
+        </div>
+      </div>
+    </div> <div id="api-panel-container">
+        <div class="api-panel-header">API &amp; DIAGNOSTICS</div>
+        <div class="api-panel-content">
+            <div class="api-panel-col scroller">
+                <div class="panel-section">
+                    <h4 class="title">Connection</h4>
+                    <div class="controls-grid small">
+                        <label for="port-input">Port</label>
+                        <input type="number" id="port-input" min="1" step="1">
+                    </div>
+                    <div class="button-group">
+                        <button id="reconnect-btn" class="button">Connect</button>
+                        <button id="scan-ports-btn" class="button">Scan</button>
+                    </div>
+                    <div id="ip-display" class="ip-display"></div>
+                </div>
+                <div class="panel-section">
+                    <h4 class="title">API Inspector</h4>
+                    <form id="api-inspector-form" class="controls-grid small">
+                        <label for="api-action">Action</label>
+                        <input type="text" id="api-action" placeholder="e.g., pin_add">
+                        <label for="api-value">Value</label>
+                        <input type="text" id="api-value" placeholder="e.g., Strength">
+                        <button type="submit" class="button" style="grid-column: 1 / -1;">Send Command</button>
+                    </form>
+                </div>
+            </div>
+            <div class="panel-section scroller"><h4 class="title">Last Payload</h4><pre id="json-viewer">{ "status": "Awaiting data..." }</pre></div>
+            <div class="panel-section scroller"><h4 class="title">Event Log</h4><div class="debug-controls"><label><input type="checkbox" id="autoscroll-debug" checked> Autoscroll</label><button id="self-check-btn">Self-Check</button></div><pre id="debug-log"></pre></div>
+        </div>
+    </div>
+    <button id="api-panel-toggle" title="Toggle API Panel">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6.429 9.75L2.25 12l4.179 2.25m0-4.5l5.571 3 5.571-3m-11.142 0L12 15.25l5.571-5.5M6.429 9.75L12 6.5l5.571 3.25"></path></svg>
+    </button>
+  </div> <script src="script.js"></script>
+</body>
+</html>
