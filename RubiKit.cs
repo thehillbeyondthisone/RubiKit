@@ -30,7 +30,7 @@ namespace RubiKit
         public override void Run(string pluginDir)
         {
             // Where your HTML/JS/CSS live (adjust if you use a different subfolder)
-            _webRoot = Path.Combine(pluginDir ?? "", "Web");
+            _webRoot = Path.Combine(pluginDir ?? "", "RubiKit");
             if (!Directory.Exists(_webRoot))
                 Directory.CreateDirectory(_webRoot); // won't throw if already exists
 

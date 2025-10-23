@@ -48,9 +48,7 @@ namespace RubiKit.GameData
 
             // 3. Add any other special fields we want to expose
             try { stats["Level"] = player.Level; } catch { }
-            try { stats["AlienLevel"] = player.AlienLevel; } catch { }
             try { stats["Profession"] = (int)player.Profession; } catch { }
-            try { stats["Gender"] = (int)player.Gender; } catch { }
             try { stats["Breed"] = (int)player.Breed; } catch { }
             try { stats["Side"] = (int)player.Side; } catch { }
 
@@ -77,9 +75,7 @@ namespace RubiKit.GameData
             names.Add("CurrentNano");
             names.Add("MaxNanoEnergy");
             names.Add("Level");
-            names.Add("AlienLevel");
             names.Add("Profession");
-            names.Add("Gender");
             names.Add("Breed");
             names.Add("Side");
 
