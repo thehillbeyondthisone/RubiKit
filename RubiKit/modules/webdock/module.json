@@ -1,9 +1,0 @@
-{
-  "id": "webdock",
-  "name": "webdock",
-  "version": "1.0.0",
-  "author": "RubiKit Team",
-  "description": "Window nesting",
-  "entrypoint": "index.html",
-  "icon": "icons/web-dock-animated.svg"
-}

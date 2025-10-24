@@ -3,22 +3,26 @@
     {
       "id": "notumhud",
       "name": "NotumHUD",
-      "icon": "icons/notumhud-animated.svg",
-      "description": "Overlay HUD for AO stats with live metrics.",
+      "icon": "🎯",
+      "description": "Real-time game stats overlay with live metrics and pinned stats.",
       "tags": [
         "hud",
         "overlay",
-        "metrics"
+        "metrics",
+        "builtin"
       ],
-      "href": "notumHUD/index.html"
+      "href": "modules/notumhud/index.html"
     },
-        {
+    {
       "id": "webdock",
-      "name": "webdock",
-      "icon": "icons/web-dock-animated.svg",
-      "description": "Window nesting",
-      "tags": [],
-      "href": "WebDock/index.html"
-    },
+      "name": "WebDock",
+      "icon": "🪟",
+      "description": "Window nesting and container management system.",
+      "tags": [
+        "utility",
+        "windows"
+      ],
+      "href": "modules/webdock/index.html"
+    }
   ]
 }
