@@ -1,34 +1,74 @@
 # RubiKit Architecture & Folder Structure
 
-## 📁 Deployment Structure
+## 📁 Repository Structure (Development)
 
-When deployed via Inno Setup or manually, the RubiKit plugin should have this structure:
+The Web assets live at the repo root alongside .cs files for easy development:
 
 ```
-<AOSharp Plugins Folder>/RubiKit/
-├── RubiKit.dll                    # Main plugin DLL (loads into game)
-├── notumhud_prefs.json            # User preferences for NotumHUD (auto-created)
-├── packages/                       # AOSharp dependencies
+RubiKit/                           # Git repo root
+├── .gitignore                     # Excludes bin/, obj/, build artifacts
+├── RubiKit.sln                    # Visual Studio solution
+├── RubiKit.csproj                 # C# project file
+├── RubiKit.cs                     # Main plugin entry point
+├── MacroRunner.cs                 # Macro execution engine
+├── MacroSubmitter.cs              # Chat command submission
+├── ARCHITECTURE.md                # This file
+├── README.md                      # Project readme
+├── GameData/                      # Game state providers
+│   ├── GameStateProvider.cs       # Reads all stats from AOSharp
+│   ├── UserPreferences.cs         # Manages pins, settings, categories
+│   └── NotumHudAPI.cs             # HTTP API endpoints
+├── Properties/                    # Assembly info
+│   └── AssemblyInfo.cs
+├── packages/                      # NuGet/AOSharp dependencies
 │   ├── AOSharp.Core.dll
 │   └── AOSharp.Common.dll
-└── RubiKit/                        # Web root (served via HTTP on port 8780)
-    ├── index.html                  # Main dashboard UI
-    ├── rubikit.js                  # Dashboard JavaScript
-    ├── rubikit.css                 # Dashboard styles
-    ├── manifest-manager.js         # Manifest utilities
-    ├── boot/                       # Boot splash screen
+└── Web/                           # ← Web assets at repo root
+    ├── index.html                 # Main dashboard UI
+    ├── rubikit.js                 # Dashboard JavaScript
+    ├── rubikit.css                # Dashboard styles
+    ├── manifest-manager.js        # Manifest utilities
+    ├── boot/                      # Boot splash screen
     │   ├── boot.html
     │   ├── boot.js
     │   └── boot.css
-    └── modules/                    # Module directory
-        ├── modules.json            # Module manifest (defines available modules)
-        ├── notumhud/               # NotumHUD module (built-in)
+    └── modules/                   # Module directory
+        ├── modules.json           # Module manifest (auto-loads on startup)
+        ├── notumhud/              # NotumHUD module (built-in)
         │   ├── index.html
         │   ├── script.js
         │   └── style.css
-        └── webdock/                # WebDock module (built-in)
+        └── webdock/               # WebDock module (built-in)
             ├── index.html
             └── module.json
+```
+
+**Why this structure?**
+- Web assets are at repo root so you don't have to move them when deploying
+- Simply copy `RubiKit.dll` (from bin/) + `Web/` folder + `packages/` to AOSharp plugins
+- No nested confusion (old structure had `/RubiKit/RubiKit/` which was confusing)
+
+## 📦 Deployment Structure (AOSharp Plugins Folder)
+
+When deployed, the structure is identical to the repo (just add the compiled DLL):
+
+```
+<AOSharp Plugins>/RubiKit/
+├── RubiKit.dll                    # Compiled plugin (from bin/x86/Release/)
+├── notumhud_prefs.json            # User preferences (auto-created at runtime)
+├── packages/                       # Copy from repo
+│   ├── AOSharp.Core.dll
+│   └── AOSharp.Common.dll
+└── Web/                           # Copy entire folder from repo
+    ├── index.html
+    ├── rubikit.js
+    ├── rubikit.css
+    ├── manifest-manager.js
+    ├── boot/
+    └── modules/
+        ├── modules.json           # Auto-loads on startup
+        ├── notumhud/
+        └── webdock/
 ```
 
 ## 🔌 Backend Architecture
@@ -43,7 +83,7 @@ When deployed via Inno Setup or manually, the RubiKit plugin should have this st
 
 1. **RubiKit.cs** (Main Entry Point)
    - Initializes HTTP server on port `8780`
-   - Web root: `<pluginDir>/RubiKit/`
+   - Web root: `<pluginDir>/Web/` (changed from "RubiKit" to "Web")
    - Registers `/rubi` and `/about` chat commands
    - Starts NotumHUD API on plugin load
 
@@ -71,7 +111,7 @@ When deployed via Inno Setup or manually, the RubiKit plugin should have this st
 
 ### Dashboard (RubiKitOS)
 
-**Location:** `RubiKit/index.html`
+**Location:** `Web/index.html`
 
 **Features:**
 - Module grid home screen
@@ -81,10 +121,15 @@ When deployed via Inno Setup or manually, the RubiKit plugin should have this st
 - Theme switcher (Inferno, Notum Blue, Terminal, Paper, Monokai)
 - Desktop visual effects (Aurora, Breathe, Scanline)
 
-**Module Discovery:**
-1. Checks `localStorage` for cached manifest
-2. Falls back to fetching `modules/modules.json`
-3. Manual scan: Users can click "Choose Folder" to scan local folders via File System Access API
+**Module Loading (Automatic):**
+1. **On page load**, automatically fetches `modules/modules.json`
+2. Renders module cards on home screen
+3. No user action required!
+
+**Manual Scan (Optional, for Developers):**
+- Click "Builder" → "Choose Folder" to regenerate manifest
+- Uses File System Access API to scan local folders
+- Creates new `modules.json` based on discovered modules
 
 ### Built-in Modules
 
@@ -135,9 +180,9 @@ All endpoints available at `http://127.0.0.1:8780`:
 
 ## 📦 Adding New Modules
 
-### Option 1: Manual Entry in modules.json
+### Option 1: Edit modules.json (Recommended)
 
-Edit `RubiKit/modules/modules.json`:
+Edit `Web/modules/modules.json`:
 
 ```json
 {
@@ -154,24 +199,22 @@ Edit `RubiKit/modules/modules.json`:
 }
 ```
 
-### Option 2: File System Access API (Manual Scan)
+Modules auto-load on startup. No user action needed!
+
+### Option 2: File System Access API (Developer Tool)
 
 1. Open RubiKit dashboard (`/rubi`)
 2. Click "Builder" in the taskbar
 3. Click "Choose Folder"
-4. Select your `RubiKit/modules/` folder
+4. Select your `Web/modules/` folder
 5. Click "Update .json" to save
 6. Click "Apply to Runtime" to load
-
-The scanner will detect:
-- Folders with `module.json` (preferred)
-- Folders with `index.html` (fallback)
 
 ### Module Structure
 
 **Option A: With module.json** (Recommended)
 ```
-modules/mymodule/
+Web/modules/mymodule/
 ├── module.json       # Module metadata
 ├── index.html        # Entry point
 ├── script.js         # Module logic
@@ -190,9 +233,9 @@ modules/mymodule/
 }
 ```
 
-**Option B: Minimal** (auto-detected)
+**Option B: Minimal** (auto-detected by scanner)
 ```
-modules/mymodule/
+Web/modules/mymodule/
 └── index.html
 ```
 
@@ -209,18 +252,19 @@ Output: `bin/x86/Release/RubiKit.dll`
 
 ### Testing
 
-1. Copy `RubiKit.dll` to AOSharp plugins folder
-2. Copy `RubiKit/` folder to AOSharp plugins folder
-3. Launch Anarchy Online with AOSharp
-4. Type `/rubi` in-game to open dashboard
-5. Navigate to NotumHUD or other modules
+1. Copy `bin/x86/Release/RubiKit.dll` to `<AOSharp Plugins>/RubiKit/`
+2. Copy entire `Web/` folder to `<AOSharp Plugins>/RubiKit/`
+3. Copy `packages/` folder to `<AOSharp Plugins>/RubiKit/`
+4. Launch Anarchy Online with AOSharp
+5. Type `/rubi` in-game to open dashboard
+6. Navigate to NotumHUD or other modules
 
 ### Hot Reload (Frontend Only)
 
 Since the web assets are served via HTTP, you can edit HTML/CSS/JS files and refresh the browser without restarting the game:
-- Edit `/RubiKit/modules/notumhud/script.js`
+- Edit `Web/modules/notumhud/script.js`
 - Refresh browser window
-- Changes take effect immediately
+- Changes take effect immediately!
 
 ### Backend Changes
 
@@ -296,3 +340,18 @@ Themes are saved in `localStorage` and persist across sessions.
 - **Stat Enumeration**: ~200-500 stats per update
 - **Memory**: Minimal (ring buffer limited to 5000 log lines)
 - **CPU**: Negligible (<1% on modern systems)
+
+## 🛠️ Inno Setup Deployment
+
+For creating an installer, include:
+
+```
+Source: "bin\x86\Release\RubiKit.dll"; DestDir: "{app}\RubiKit"
+Source: "Web\*"; DestDir: "{app}\RubiKit\Web"; Flags: recursesubdirs
+Source: "packages\*.dll"; DestDir: "{app}\RubiKit\packages"
+```
+
+This copies:
+- Compiled DLL from build output
+- Entire Web folder (preserves structure)
+- AOSharp dependencies

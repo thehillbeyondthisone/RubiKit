@@ -29,10 +29,10 @@ namespace RubiKit
         [Obsolete("AOSharp marks Run obsolete; still required by loader.")]
         public override void Run(string pluginDir)
         {
-            // Where your HTML/JS/CSS live (adjust if you use a different subfolder)
-            _webRoot = Path.Combine(pluginDir ?? "", "RubiKit");
+            // Where your HTML/JS/CSS live
+            _webRoot = Path.Combine(pluginDir ?? "", "Web");
             if (!Directory.Exists(_webRoot))
-                Directory.CreateDirectory(_webRoot); // won't throw if already exists
+                Directory.CreateDirectory(_webRoot);
 
             Chat.WriteLine(
                 "<font color='#7ee787'>[" + Name + "]</font> v" + Version +

@@ -14,8 +14,7 @@
   const RAW = Object.assign({
     basePath: ".",
     modulesDir: "./modules/",
-    modulesManifestCandidates: ["./modules/modules.json", "./modules.json"],
-    autodetectModules: false
+    modulesManifestCandidates: ["./modules/modules.json", "./modules.json"]
   }, window.RubiKitConfig || {});
 
   const PAGE_DIR = new URL('.', location.href).href;
@@ -24,8 +23,7 @@
   const CFG = {
     pageDir: PAGE_DIR,
     modulesDir: urlFrom(PAGE_DIR, RAW.modulesDir),
-    manifests: (RAW.modulesManifestCandidates || []).map(p => urlFrom(PAGE_DIR, p)),
-    autodetect: !!RAW.autodetectModules
+    manifests: (RAW.modulesManifestCandidates || []).map(p => urlFrom(PAGE_DIR, p))
   };
 
   let modules = [];
