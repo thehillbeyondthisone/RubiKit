@@ -123,12 +123,12 @@
   <div id="rk-toasts" aria-live="polite" aria-atomic="true"></div>
 
   <script>
-    /* Overridable by PalettePilot, etc. */
+    /* Modules auto-load from modules.json on startup. No user action needed. */
+    /* "Choose Folder" in Builder is optional for developers regenerating manifest. */
     window.RubiKitConfig = Object.assign({
       basePath: ".",
       modulesDir: "./modules/",
-      modulesManifestCandidates: ["./modules/modules.json","./modules.json"],
-      autodetectModules: false
+      modulesManifestCandidates: ["./modules/modules.json","./modules.json"]
     }, window.RubiKitConfig || {});
   </script>
   <script src="./rubikit.js"></script>

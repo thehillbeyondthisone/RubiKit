@@ -1,9 +1,0 @@
-C:\Users\Administrator\Documents\GitHub\RubiKit\bin\x86\Release\RubiKit.dll
-C:\Users\Administrator\Documents\GitHub\RubiKit\bin\x86\Release\RubiKit.pdb
-C:\Users\Administrator\Documents\GitHub\RubiKit\bin\x86\Release\AOSharp.Common.dll
-C:\Users\Administrator\Documents\GitHub\RubiKit\bin\x86\Release\AOSharp.Core.dll
-C:\Users\Administrator\Documents\GitHub\RubiKit\obj\x86\Release\RubiKit.csproj.AssemblyReference.cache
-C:\Users\Administrator\Documents\GitHub\RubiKit\obj\x86\Release\RubiKit.csproj.CoreCompileInputs.cache
-C:\Users\Administrator\Documents\GitHub\RubiKit\obj\x86\Release\RubiKit.csproj.Up2Date
-C:\Users\Administrator\Documents\GitHub\RubiKit\obj\x86\Release\RubiKit.dll
-C:\Users\Administrator\Documents\GitHub\RubiKit\obj\x86\Release\RubiKit.pdb
