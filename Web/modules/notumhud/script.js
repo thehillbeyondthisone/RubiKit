@@ -140,7 +140,7 @@
   // ===================================
   function connect(){ if(es){ es.close(); } logDebug(`Attempting SSE connection to ${API_BASE}/events...`); try{ es = new EventSource(`${API_BASE}/events`); es.onopen = () => { logDebug('SSE connection established.','success'); els.statusText.textContent='Live'; els.dot.className='dot ok'; isConnected=true; }; es.onerror = () => { logDebug('SSE connection failed. Falling back to poll.','error'); els.statusText.textContent='SSE Error'; els.dot.className='dot err'; es.close(); pollState(); }; es.onmessage = (e) => { if(e.data){ try{ render(JSON.parse(e.data)); } catch(err){ logDebug(`Render Error: ${err.message}`,'error'); } } }; } catch(err) { logDebug(`EventSource constructor failed: ${err.message}`,'error'); pollState(); } }
   async function pollState(){ logDebug(`Polling ${API_BASE}/api/state...`,'api'); els.statusText.textContent='Polling'; els.dot.className='dot'; try{ const r = await fetch(`${API_BASE}/api/state`,{mode:'cors'}); if(r.ok){ logDebug('Poll successful.','success'); render(await r.json()); } else{ logDebug(`Poll failed: HTTP ${r.status}`,'error'); } } catch(err) { logDebug(`Poll fetch error: ${err.message}`,'error'); } setTimeout(connect, 5000); }
-  async function scanPorts(){ const defaults = [8780, 8777, 8778, 8000, 8080, 3000, 5000]; const current = els.portInput.value ? Number(els.portInput.value) : null; const ports = [...new Set([current, ...defaults].filter(Boolean))]; logDebug(`--- Starting Port Scan: ${ports.join(', ')} ---`); let found = false; for(const port of ports){ const controller = new AbortController(); const timeoutId = setTimeout(()=>controller.abort(), 1500); try{ const res = await fetch(`http://127.0.0.1:${port}/api/state`, {signal:controller.signal, mode:'cors'}); clearTimeout(timeoutId); if(res.ok){ logDebug(`✅ Port ${port}: Found! Set port and click 'Connect'.`,'success'); found = true; } else{ logDebug(`🔵 Port ${port}: Responded (HTTP ${res.status}).`,'warn'); } }catch(e){ clearTimeout(timeoutId); logDebug(`🔴 Port ${port}: No response.`); } } logDebug(found ? '--- Port Scan Complete ---' : 'Scan complete. No active NotumHUD ports found.','warn'); }
+  async function scanPorts(autoConnect = false){ const defaults = [8780, 8777, 8778, 8000, 8080, 3000, 5000]; const current = els.portInput.value ? Number(els.portInput.value) : null; const ports = [...new Set([current, ...defaults].filter(Boolean))]; logDebug(`--- Starting Port Scan: ${ports.join(', ')} ${autoConnect ? '(auto-connect mode)' : ''}---`); let foundPort = null; for(const port of ports){ const controller = new AbortController(); const timeoutId = setTimeout(()=>controller.abort(), 1500); try{ const res = await fetch(`http://127.0.0.1:${port}/api/state`, {signal:controller.signal, mode:'cors'}); clearTimeout(timeoutId); if(res.ok){ logDebug(`✅ Port ${port}: Found!${autoConnect ? ' Auto-connecting...' : ' Set port and click \'Connect\'.'}`,'success'); foundPort = port; break; } else{ logDebug(`🔵 Port ${port}: Responded (HTTP ${res.status}).`,'warn'); } }catch(e){ clearTimeout(timeoutId); logDebug(`🔴 Port ${port}: No response.`); } } if(foundPort){ if(autoConnect){ els.portInput.value = foundPort; saveLocal('port', foundPort); API_BASE = `http://127.0.0.1:${foundPort}`; logDebug(`Auto-connecting to port ${foundPort}...`, 'success'); connect(); } logDebug('--- Port Scan Complete: Port found ---','success'); } else { logDebug('Scan complete. No active NotumHUD ports found.','warn'); } return foundPort; }
 
   function initEventListeners() {
     ['theme','font'].forEach(key => els[key].addEventListener('change', () => { updateBodyClass(); post(key, els[key].value); saveLocal(key, els[key].value); }));
@@ -177,9 +177,45 @@
     });
   }
 
-  function init() {
+  async function init() {
     loadCustomCategories();
-    const savedPort = loadLocal('port','8780'); els.portInput.value = savedPort; API_BASE = `http://127.0.0.1:${savedPort}`; els.theme.value = loadLocal('theme', 'theme-notum'); els.font.value = loadLocal('font', 'font-default'); els.fontSize.value = loadLocal('fontSize', '100'); if(loadLocal('compact','0') === '1') els.compactToggle.checked = true; if(loadLocal('editMode','0') === '1') els.editModeToggle.checked = true; logDebug("Initializing NotumHUD..."); renderSettings(); initEventListeners(); connect(); setTimeout(() => { if(!isConnected){ logDebug('No connection. Loading demo data.','warn'); els.statusText.textContent = 'Demo Mode'; els.dot.className='dot'; render({ "all":{ Strength:349, Agility:367, Stamina:433, Health:12345, MaxHealth:15000, CurrentNano:5678, MaxNanoEnergy:8000, AddAllOff:150, AddAllDef:200, CriticalIncrease:5, XPModifier:10, ProjectileDamageModifier:50, MeleeAC:12000, NanoCInit:1800, Tutoring: HIDE_VALUE }, "all_names": ["Strength", "Agility", "Stamina", "AddAllOff", "AddAllDef", "CriticalIncrease", "XPModifier", "ProjectileDamageModifier", "MeleeAC", "NanoCInit", "Health", "MaxHealth", "CurrentNano", "MaxNanoEnergy", "Tutoring"], "pins":[{"name":"NanoCInit","v":1800,"label":"Nano Init"}], "settings":{"theme":"theme-inferno","font":"font-sci-fi"} }); } }, 1500);
+    const savedPort = loadLocal('port', null);
+    const isFirstRun = !savedPort;
+
+    // Set initial port or default
+    els.portInput.value = savedPort || '8780';
+    API_BASE = `http://127.0.0.1:${els.portInput.value}`;
+
+    els.theme.value = loadLocal('theme', 'theme-notum');
+    els.font.value = loadLocal('font', 'font-default');
+    els.fontSize.value = loadLocal('fontSize', '100');
+    if(loadLocal('compact','0') === '1') els.compactToggle.checked = true;
+    if(loadLocal('editMode','0') === '1') els.editModeToggle.checked = true;
+
+    logDebug("Initializing NotumHUD...");
+    renderSettings();
+    initEventListeners();
+
+    // Auto port scan on first run
+    if(isFirstRun){
+      logDebug('First run detected. Auto-scanning for available ports...', 'info');
+      const foundPort = await scanPorts(true); // Auto-connect enabled
+      if(!foundPort){
+        logDebug('No ports found during auto-scan. Trying default 8780...', 'warn');
+        connect();
+      }
+    } else {
+      connect();
+    }
+
+    setTimeout(() => {
+      if(!isConnected){
+        logDebug('No connection. Loading demo data.','warn');
+        els.statusText.textContent = 'Demo Mode';
+        els.dot.className='dot';
+        render({ "all":{ Strength:349, Agility:367, Stamina:433, Health:12345, MaxHealth:15000, CurrentNano:5678, MaxNanoEnergy:8000, AddAllOff:150, AddAllDef:200, CriticalIncrease:5, XPModifier:10, ProjectileDamageModifier:50, MeleeAC:12000, NanoCInit:1800, Tutoring: HIDE_VALUE }, "all_names": ["Strength", "Agility", "Stamina", "AddAllOff", "AddAllDef", "CriticalIncrease", "XPModifier", "ProjectileDamageModifier", "MeleeAC", "NanoCInit", "Health", "MaxHealth", "CurrentNano", "MaxNanoEnergy", "Tutoring"], "pins":[{"name":"NanoCInit","v":1800,"label":"Nano Init"}], "settings":{"theme":"theme-inferno","font":"font-sci-fi"} });
+      }
+    }, 2500); // Increased timeout to allow port scan to complete
   }
 
   init();
