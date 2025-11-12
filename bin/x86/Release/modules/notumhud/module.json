@@ -1,0 +1,7 @@
+{
+  "id": "notum-hud",
+  "name": "NotumHUD",
+  "icon": "ðŸ“Š",
+  "path": "modules/notumHUD/index.html",
+  "persistent": true
+}
