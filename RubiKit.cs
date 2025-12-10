@@ -33,7 +33,7 @@ namespace RubiKit
             {
                 _kernel = new Kernel(pluginDir ?? "");
                 _kernel.Start();
-                Chat.WriteLine("<color=#4da3ff>[RubiKit 2.1]</color> API on 127.0.0.1:8777  |  /rubi to open NotumHUD");
+                Chat.WriteLine("<color=#4da3ff>[RubiKit 2.1]</color> API on 127.0.0.1:8777  |  /rubi to open RubiKit OS");
                 Chat.RegisterCommand("rubi", (cmd, a, w) => _kernel.OpenStatus());
                 Chat.RegisterCommand("about", (cmd, a, w) => _kernel.ShowAbout());
             }
@@ -207,9 +207,9 @@ namespace RubiKit
 
         public void OpenStatus()
         {
-            var url = "http://127.0.0.1:" + Port + "/modules/notumHUD/index.html";
+            var url = "http://127.0.0.1:" + Port + "/";
             try { System.Diagnostics.Process.Start(url); } catch { }
-            Chat.WriteLine("[RubiKit] Opening NotumHUD: " + url);
+            Chat.WriteLine("[RubiKit] Opening RubiKit OS: " + url);
         }
 
         public void ShowAbout()
@@ -300,21 +300,39 @@ namespace RubiKit
                     ServeStaticUnder(Path.Combine(_baseDir, "modules"), path.Substring("/modules/".Length), ctx);
                     return;
                 }
-                if (path == "/" || path == "/index.html" || path == "/monitor.html")
+                if (path == "/" || path == "/index.html")
                 {
-                    string fileName = path == "/monitor.html" ? "monitor.html" : "index.html";
-                    string fullPath = Path.Combine(_baseDir, "modules", "notumHUD", fileName);
-
-                    if (!File.Exists(fullPath) && fileName == "index.html")
+                    string fullPath = Path.Combine(_baseDir, "index.html");
+                    if (File.Exists(fullPath))
+                    {
+                        SendFile(res, fullPath, "text/html; charset=utf-8", 200);
+                        return;
+                    }
+                    else
                     {
                         SendStatusPage(res);
                         return;
                     }
-                    else if (File.Exists(fullPath))
+                }
+
+                // Serve CSS and JS from base directory
+                if (path == "/rubikit.css" || path == "/rubikit.js")
+                {
+                    string fileName = path.TrimStart('/');
+                    string fullPath = Path.Combine(_baseDir, fileName);
+                    if (File.Exists(fullPath))
                     {
-                        ServeStaticUnder(Path.Combine(_baseDir, "modules"), "notumHUD/" + fileName, ctx);
+                        SendFile(res, fullPath, GetMime(fullPath), 200);
                         return;
                     }
+                }
+
+                // Serve unified-os-tools directory
+                if (path.StartsWith("/unified-os-tools/", StringComparison.OrdinalIgnoreCase))
+                {
+                    string relPath = path.Substring("/unified-os-tools/".Length);
+                    ServeStaticUnder(Path.Combine(_baseDir, "unified-os-tools"), relPath, ctx);
+                    return;
                 }
 
                 SendStatusPage(res);
@@ -340,9 +358,10 @@ namespace RubiKit
         {
             res.StatusCode = 200;
             res.ContentType = "text/html; charset=utf-8";
-            var html = "<!doctype html><meta charset='utf-8'><title>RubiKit 2.1</title>" +
-                       "<style>body{font:14px/1.4 system-ui,sans-serif;padding:18px;background:#0e1f12;color:#e9ecf1} a{color:#58a6ff;}</style>" +
-                       "<h2>RubiKit 2.1</h2><p>Online. Open <a href='/modules/notumHUD/index.html'>NotumHUD</a>.</p>";
+            var html = "<!doctype html><meta charset='utf-8'><title>RubiKit OS</title>" +
+                       "<style>body{font:14px/1.4 system-ui,sans-serif;padding:18px;background:#0a0e14;color:#e6e8eb} a{color:#00d9ff;}</style>" +
+                       "<h2>RubiKit OS</h2><p>Online. Type <code>/rubi</code> in-game to open the desktop interface.</p>" +
+                       "<p>Or visit <a href='/'>RubiKit OS Desktop</a> directly.</p>";
             var bytes = Encoding.UTF8.GetBytes(html);
             res.OutputStream.Write(bytes, 0, bytes.Length);
         }
