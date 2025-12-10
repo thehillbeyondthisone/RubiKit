@@ -1,1 +1,635 @@
-.rk-tab{padding:8px;border:1px solid #333;margin:4px;border-radius:8px}.rk-card{padding:16px;border:1px solid #333;border-radius:12px}
+/* ============================================
+   RubiKit OS - Global Theme System
+   ============================================ */
+
+/* Base CSS Variables - Default Theme */
+:root {
+  /* Colors */
+  --rk-bg-primary: #0a0e14;
+  --rk-bg-secondary: #141920;
+  --rk-bg-tertiary: #1a2028;
+  --rk-text-primary: #e6e8eb;
+  --rk-text-secondary: #a0a8b0;
+  --rk-text-muted: #6b7280;
+  --rk-accent-primary: #00d9ff;
+  --rk-accent-secondary: #0088ff;
+  --rk-border-color: #2a3441;
+  --rk-shadow: rgba(0, 0, 0, 0.5);
+
+  /* Status Colors */
+  --rk-success: #00ff88;
+  --rk-warning: #ffaa00;
+  --rk-error: #ff3366;
+  --rk-info: #00aaff;
+
+  /* CRT Effects */
+  --rk-crt-scanline-opacity: 0.15;
+  --rk-crt-glow-intensity: 0.6;
+  --rk-crt-glow-color: var(--rk-accent-primary);
+  --rk-crt-breathing-duration: 3s;
+
+  /* Spacing */
+  --rk-spacing-xs: 4px;
+  --rk-spacing-sm: 8px;
+  --rk-spacing-md: 16px;
+  --rk-spacing-lg: 24px;
+  --rk-spacing-xl: 32px;
+
+  /* Sizing */
+  --rk-topbar-height: 56px;
+  --rk-statusbar-height: 32px;
+  --rk-tabbar-height: 42px;
+  --rk-border-radius: 8px;
+
+  /* Typography */
+  --rk-font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+  --rk-font-mono: 'Courier New', Consolas, Monaco, monospace;
+}
+
+/* ============================================
+   Theme Variants
+   ============================================ */
+
+/* Cyber Theme (Default/Blue) */
+.theme-cyber {
+  --rk-bg-primary: #0a0e14;
+  --rk-bg-secondary: #141920;
+  --rk-bg-tertiary: #1a2028;
+  --rk-text-primary: #e6e8eb;
+  --rk-text-secondary: #a0a8b0;
+  --rk-accent-primary: #00d9ff;
+  --rk-accent-secondary: #0088ff;
+  --rk-crt-glow-color: #00d9ff;
+}
+
+/* Retro Theme (Amber/Orange) */
+.theme-retro {
+  --rk-bg-primary: #1a1200;
+  --rk-bg-secondary: #2a1f00;
+  --rk-bg-tertiary: #3a2a00;
+  --rk-text-primary: #ffcc66;
+  --rk-text-secondary: #cc9933;
+  --rk-accent-primary: #ffaa00;
+  --rk-accent-secondary: #ff8800;
+  --rk-border-color: #443300;
+  --rk-crt-glow-color: #ffaa00;
+}
+
+/* Terminal Theme (Green) */
+.theme-terminal {
+  --rk-bg-primary: #001a00;
+  --rk-bg-secondary: #002200;
+  --rk-bg-tertiary: #003300;
+  --rk-text-primary: #00ff00;
+  --rk-text-secondary: #00cc00;
+  --rk-accent-primary: #00ff88;
+  --rk-accent-secondary: #00cc66;
+  --rk-border-color: #004400;
+  --rk-crt-glow-color: #00ff00;
+}
+
+/* Neon Theme (Pink/Purple) */
+.theme-neon {
+  --rk-bg-primary: #1a0033;
+  --rk-bg-secondary: #2a0044;
+  --rk-bg-tertiary: #3a0055;
+  --rk-text-primary: #ff99ff;
+  --rk-text-secondary: #cc66cc;
+  --rk-accent-primary: #ff00ff;
+  --rk-accent-secondary: #cc00ff;
+  --rk-border-color: #550088;
+  --rk-crt-glow-color: #ff00ff;
+}
+
+/* Classic Theme (Grayscale) */
+.theme-classic {
+  --rk-bg-primary: #1a1a1a;
+  --rk-bg-secondary: #2a2a2a;
+  --rk-bg-tertiary: #3a3a3a;
+  --rk-text-primary: #eeeeee;
+  --rk-text-secondary: #bbbbbb;
+  --rk-accent-primary: #ffffff;
+  --rk-accent-secondary: #cccccc;
+  --rk-border-color: #444444;
+  --rk-crt-glow-color: #ffffff;
+}
+
+/* ============================================
+   Base Styles
+   ============================================ */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  font-family: var(--rk-font-family);
+  background: var(--rk-bg-primary);
+  color: var(--rk-text-primary);
+}
+
+/* ============================================
+   CRT Effects
+   ============================================ */
+
+.rk-crt-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.rk-crt-overlay.active {
+  opacity: 1;
+}
+
+/* Scanlines Effect */
+.rk-scanlines {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0) 0px,
+    rgba(0, 0, 0, 0) 1px,
+    rgba(0, 0, 0, var(--rk-crt-scanline-opacity)) 2px,
+    rgba(0, 0, 0, var(--rk-crt-scanline-opacity)) 3px
+  );
+  animation: rk-scanline-flicker 0.1s infinite;
+}
+
+@keyframes rk-scanline-flicker {
+  0% { opacity: 0.95; }
+  50% { opacity: 1; }
+  100% { opacity: 0.95; }
+}
+
+/* Glow Effect */
+.rk-glow {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(
+    ellipse at center,
+    transparent 0%,
+    rgba(0, 0, 0, 0.1) 100%
+  );
+  box-shadow:
+    inset 0 0 100px rgba(var(--rk-crt-glow-color), calc(var(--rk-crt-glow-intensity) * 0.3)),
+    inset 0 0 50px rgba(var(--rk-crt-glow-color), calc(var(--rk-crt-glow-intensity) * 0.2));
+  animation: rk-breathing var(--rk-crt-breathing-duration) ease-in-out infinite;
+}
+
+@keyframes rk-breathing {
+  0%, 100% { opacity: 0.8; }
+  50% { opacity: 1; }
+}
+
+/* ============================================
+   Main Container
+   ============================================ */
+
+.rk-os {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  background: var(--rk-bg-primary);
+}
+
+/* ============================================
+   Top Bar
+   ============================================ */
+
+.rk-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: var(--rk-topbar-height);
+  padding: 0 var(--rk-spacing-md);
+  background: var(--rk-bg-secondary);
+  border-bottom: 1px solid var(--rk-border-color);
+  box-shadow: 0 2px 8px var(--rk-shadow);
+  z-index: 100;
+}
+
+.rk-brand {
+  display: flex;
+  align-items: center;
+  gap: var(--rk-spacing-sm);
+}
+
+.rk-logo {
+  font-size: 24px;
+  color: var(--rk-accent-primary);
+  text-shadow: 0 0 10px var(--rk-accent-primary);
+}
+
+.rk-brand h1 {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: var(--rk-text-primary);
+  text-transform: uppercase;
+}
+
+.rk-version {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--rk-text-secondary);
+  margin-left: var(--rk-spacing-xs);
+}
+
+.rk-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--rk-spacing-md);
+}
+
+.rk-control-group {
+  display: flex;
+  align-items: center;
+  gap: var(--rk-spacing-sm);
+  font-size: 13px;
+  color: var(--rk-text-secondary);
+}
+
+.rk-select {
+  padding: 6px 12px;
+  background: var(--rk-bg-tertiary);
+  border: 1px solid var(--rk-border-color);
+  border-radius: var(--rk-border-radius);
+  color: var(--rk-text-primary);
+  font-size: 13px;
+  cursor: pointer;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.rk-select:hover {
+  border-color: var(--rk-accent-primary);
+  box-shadow: 0 0 8px rgba(var(--rk-accent-primary), 0.3);
+}
+
+.rk-toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--rk-spacing-sm);
+  cursor: pointer;
+  user-select: none;
+}
+
+.rk-toggle input[type="checkbox"] {
+  appearance: none;
+  width: 40px;
+  height: 20px;
+  background: var(--rk-bg-tertiary);
+  border: 1px solid var(--rk-border-color);
+  border-radius: 10px;
+  position: relative;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.rk-toggle input[type="checkbox"]::before {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 14px;
+  height: 14px;
+  background: var(--rk-text-muted);
+  border-radius: 50%;
+  transition: all 0.3s ease;
+}
+
+.rk-toggle input[type="checkbox"]:checked {
+  background: var(--rk-accent-primary);
+  border-color: var(--rk-accent-primary);
+}
+
+.rk-toggle input[type="checkbox"]:checked::before {
+  left: 22px;
+  background: white;
+}
+
+.rk-slider {
+  width: 80px;
+  height: 4px;
+  background: var(--rk-bg-tertiary);
+  border-radius: 2px;
+  outline: none;
+  cursor: pointer;
+  appearance: none;
+}
+
+.rk-slider::-webkit-slider-thumb {
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  background: var(--rk-accent-primary);
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 0 8px var(--rk-accent-primary);
+}
+
+.rk-slider::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  background: var(--rk-accent-primary);
+  border-radius: 50%;
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 0 8px var(--rk-accent-primary);
+}
+
+.rk-btn {
+  padding: 8px 16px;
+  background: var(--rk-bg-tertiary);
+  border: 1px solid var(--rk-border-color);
+  border-radius: var(--rk-border-radius);
+  color: var(--rk-text-primary);
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  outline: none;
+}
+
+.rk-btn:hover {
+  background: var(--rk-accent-primary);
+  border-color: var(--rk-accent-primary);
+  color: var(--rk-bg-primary);
+  box-shadow: 0 0 12px rgba(var(--rk-accent-primary), 0.5);
+}
+
+/* ============================================
+   Desktop Area
+   ============================================ */
+
+.rk-desktop {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--rk-spacing-xl);
+  background: linear-gradient(135deg, var(--rk-bg-primary) 0%, var(--rk-bg-secondary) 100%);
+  overflow: auto;
+}
+
+.rk-desktop-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: var(--rk-spacing-lg);
+  max-width: 1200px;
+  width: 100%;
+}
+
+.rk-desktop-icon {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--rk-spacing-md);
+  background: var(--rk-bg-secondary);
+  border: 2px solid var(--rk-border-color);
+  border-radius: var(--rk-border-radius);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-align: center;
+}
+
+.rk-desktop-icon:hover {
+  background: var(--rk-bg-tertiary);
+  border-color: var(--rk-accent-primary);
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px var(--rk-shadow), 0 0 20px rgba(var(--rk-accent-primary), 0.3);
+}
+
+.rk-desktop-icon:active {
+  transform: translateY(-2px);
+}
+
+.rk-icon-image {
+  font-size: 48px;
+  margin-bottom: var(--rk-spacing-sm);
+  filter: drop-shadow(0 0 8px var(--rk-accent-primary));
+}
+
+.rk-icon-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--rk-text-primary);
+  margin-bottom: var(--rk-spacing-xs);
+}
+
+.rk-icon-description {
+  font-size: 11px;
+  color: var(--rk-text-muted);
+  line-height: 1.4;
+}
+
+.rk-desktop-info {
+  margin-top: var(--rk-spacing-xl);
+  padding: var(--rk-spacing-lg);
+  background: var(--rk-bg-secondary);
+  border: 1px solid var(--rk-border-color);
+  border-radius: var(--rk-border-radius);
+  color: var(--rk-text-secondary);
+  text-align: center;
+}
+
+/* ============================================
+   Window Manager
+   ============================================ */
+
+.rk-window-manager {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: var(--rk-bg-primary);
+  overflow: hidden;
+}
+
+.rk-tab-bar {
+  display: flex;
+  align-items: center;
+  height: var(--rk-tabbar-height);
+  background: var(--rk-bg-secondary);
+  border-bottom: 1px solid var(--rk-border-color);
+  padding: 0 var(--rk-spacing-sm);
+  gap: var(--rk-spacing-xs);
+  overflow-x: auto;
+}
+
+.rk-tabs {
+  display: flex;
+  gap: var(--rk-spacing-xs);
+  flex: 1;
+  overflow-x: auto;
+}
+
+.rk-tab {
+  display: flex;
+  align-items: center;
+  gap: var(--rk-spacing-sm);
+  padding: 8px 16px;
+  background: var(--rk-bg-tertiary);
+  border: 1px solid var(--rk-border-color);
+  border-radius: var(--rk-border-radius) var(--rk-border-radius) 0 0;
+  color: var(--rk-text-secondary);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.rk-tab:hover {
+  background: var(--rk-bg-secondary);
+  color: var(--rk-text-primary);
+}
+
+.rk-tab.active {
+  background: var(--rk-bg-primary);
+  border-bottom-color: var(--rk-bg-primary);
+  color: var(--rk-accent-primary);
+  box-shadow: 0 0 12px rgba(var(--rk-accent-primary), 0.2);
+}
+
+.rk-tab-icon {
+  font-size: 16px;
+}
+
+.rk-tab-close {
+  margin-left: var(--rk-spacing-sm);
+  padding: 2px 6px;
+  background: transparent;
+  border: none;
+  color: var(--rk-text-muted);
+  font-size: 14px;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.rk-tab-close:hover {
+  background: var(--rk-error);
+  color: white;
+}
+
+.rk-tab-btn {
+  padding: 8px 12px;
+  background: var(--rk-bg-tertiary);
+  border: 1px solid var(--rk-border-color);
+  border-radius: var(--rk-border-radius);
+  color: var(--rk-text-primary);
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.rk-tab-btn:hover {
+  background: var(--rk-accent-primary);
+  color: var(--rk-bg-primary);
+}
+
+.rk-content-area {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  background: var(--rk-bg-primary);
+}
+
+.rk-module-frame {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border: none;
+  background: white;
+  display: none;
+}
+
+.rk-module-frame.active {
+  display: block;
+}
+
+/* ============================================
+   Status Bar
+   ============================================ */
+
+.rk-statusbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: var(--rk-statusbar-height);
+  padding: 0 var(--rk-spacing-md);
+  background: var(--rk-bg-secondary);
+  border-top: 1px solid var(--rk-border-color);
+  font-size: 12px;
+  color: var(--rk-text-secondary);
+}
+
+.rk-status-left, .rk-status-right {
+  display: flex;
+  align-items: center;
+  gap: var(--rk-spacing-sm);
+}
+
+.rk-separator {
+  color: var(--rk-border-color);
+}
+
+/* ============================================
+   Utility Classes
+   ============================================ */
+
+.rk-hidden {
+  display: none !important;
+}
+
+.rk-fade-in {
+  animation: rk-fadeIn 0.3s ease;
+}
+
+@keyframes rk-fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* ============================================
+   Scrollbar Styling
+   ============================================ */
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--rk-bg-primary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--rk-border-color);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--rk-accent-primary);
+}

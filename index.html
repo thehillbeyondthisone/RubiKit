@@ -1,1 +1,98 @@
-<!doctype html><meta charset='utf-8'><title>RubiKit</title><link rel='stylesheet' href='rubikit.css'><div id='rk-tabs'></div><div id='rk-view'></div><script src='rubikit.js'></script>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>RubiKit OS</title>
+  <link rel="stylesheet" href="rubikit.css">
+</head>
+<body>
+  <!-- CRT Effects Overlay -->
+  <div id="rk-crt-overlay" class="rk-crt-overlay">
+    <div class="rk-scanlines"></div>
+    <div class="rk-glow"></div>
+  </div>
+
+  <div class="rk-os">
+    <!-- Top Bar -->
+    <header class="rk-topbar">
+      <div class="rk-brand">
+        <span class="rk-logo">◆</span>
+        <h1>RUBIKIT<span class="rk-version">OS</span></h1>
+      </div>
+
+      <nav class="rk-controls">
+        <div class="rk-control-group">
+          <label for="rk-theme-select">Theme:</label>
+          <select id="rk-theme-select" class="rk-select">
+            <option value="theme-cyber">Cyber</option>
+            <option value="theme-retro">Retro</option>
+            <option value="theme-terminal">Terminal</option>
+            <option value="theme-neon">Neon</option>
+            <option value="theme-classic">Classic</option>
+          </select>
+        </div>
+
+        <div class="rk-control-group">
+          <label class="rk-toggle">
+            <input type="checkbox" id="rk-crt-toggle" checked>
+            <span>CRT</span>
+          </label>
+        </div>
+
+        <div class="rk-control-group">
+          <label for="rk-glow-intensity">Glow:</label>
+          <input type="range" id="rk-glow-intensity" min="0" max="100" value="60" class="rk-slider">
+        </div>
+
+        <button id="rk-settings-btn" class="rk-btn" title="Settings">
+          <span>⚙</span>
+        </button>
+      </nav>
+    </header>
+
+    <!-- Desktop Area -->
+    <main class="rk-desktop" id="rk-desktop">
+      <div class="rk-desktop-grid" id="rk-desktop-grid">
+        <!-- Module icons will be dynamically inserted here -->
+      </div>
+
+      <div class="rk-desktop-info">
+        <p>Loading modules...</p>
+      </div>
+    </main>
+
+    <!-- Window Manager -->
+    <section class="rk-window-manager" id="rk-window-manager" style="display: none;">
+      <!-- Tab Bar -->
+      <div class="rk-tab-bar" id="rk-tab-bar">
+        <div class="rk-tabs" id="rk-tabs">
+          <!-- Tabs will be dynamically inserted here -->
+        </div>
+        <button class="rk-tab-btn rk-show-desktop" id="rk-show-desktop" title="Show Desktop">
+          <span>🏠</span>
+        </button>
+      </div>
+
+      <!-- Content Area -->
+      <div class="rk-content-area" id="rk-content-area">
+        <!-- Module iframes will be dynamically inserted here -->
+      </div>
+    </section>
+
+    <!-- Status Bar -->
+    <footer class="rk-statusbar">
+      <div class="rk-status-left">
+        <span id="rk-status-text">Ready</span>
+      </div>
+      <div class="rk-status-right">
+        <span id="rk-module-count">0 modules loaded</span>
+        <span class="rk-separator">|</span>
+        <span id="rk-time"></span>
+      </div>
+    </footer>
+  </div>
+
+  <script src="rubikit.js"></script>
+</body>
+</html>
