@@ -430,6 +430,13 @@ html, body {
   filter: drop-shadow(0 0 8px var(--rk-accent-primary));
 }
 
+.rk-icon-svg {
+  width: 64px;
+  height: 64px;
+  pointer-events: none;
+  filter: drop-shadow(0 0 12px var(--rk-accent-primary));
+}
+
 .rk-icon-label {
   font-size: 13px;
   font-weight: 600;
@@ -512,6 +519,13 @@ html, body {
 
 .rk-tab-icon {
   font-size: 16px;
+}
+
+.rk-tab-icon-svg {
+  width: 20px;
+  height: 20px;
+  pointer-events: none;
+  vertical-align: middle;
 }
 
 .rk-tab-close {

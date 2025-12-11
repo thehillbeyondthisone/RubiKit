@@ -147,8 +147,13 @@
     icon.className = 'rk-desktop-icon rk-fade-in';
     icon.dataset.moduleId = module.id;
 
+    // Check if icon is SVG path or emoji/text
+    const iconContent = module.icon.endsWith('.svg')
+      ? `<object type="image/svg+xml" data="${module.icon}" class="rk-icon-svg"></object>`
+      : module.icon;
+
     icon.innerHTML = `
-      <div class="rk-icon-image">${module.icon}</div>
+      <div class="rk-icon-image">${iconContent}</div>
       <div class="rk-icon-label">${module.name}</div>
       <div class="rk-icon-description">${module.description || ''}</div>
     `;
@@ -204,8 +209,13 @@
     tab.className = 'rk-tab';
     tab.dataset.moduleId = module.id;
 
+    // Check if icon is SVG path or emoji/text
+    const iconContent = module.icon.endsWith('.svg')
+      ? `<object type="image/svg+xml" data="${module.icon}" class="rk-tab-icon-svg"></object>`
+      : module.icon;
+
     tab.innerHTML = `
-      <span class="rk-tab-icon">${module.icon}</span>
+      <span class="rk-tab-icon">${iconContent}</span>
       <span class="rk-tab-label">${module.name}</span>
       <button class="rk-tab-close" title="Close">×</button>
     `;

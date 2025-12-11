@@ -2,7 +2,7 @@
   {
     "id": "hydra",
     "name": "Hydra",
-    "icon": "👁️",
+    "icon": "unified-os-tools/icons/hydra.svg",
     "description": "Multi-headed observer for game monitoring",
     "path": "unified-os-tools/Hydra.html",
     "type": "html",
@@ -11,7 +11,7 @@
   {
     "id": "xanalytics",
     "name": "Xanalytics",
-    "icon": "📊",
+    "icon": "unified-os-tools/icons/xanalytics.svg",
     "description": "Live analytics dashboard",
     "path": "unified-os-tools/Xanalytics/index.html",
     "type": "html",
@@ -20,7 +20,7 @@
   {
     "id": "notum-vision",
     "name": "NotumVision",
-    "icon": "🎯",
+    "icon": "unified-os-tools/icons/notumvision.svg",
     "description": "Advanced HUD with proximity guard",
     "path": "unified-os-tools/NotumVision/UI/index.html",
     "type": "html",
@@ -29,7 +29,7 @@
   {
     "id": "shop-maker",
     "name": "ShopMaker",
-    "icon": "🏪",
+    "icon": "unified-os-tools/icons/shopmaker.svg",
     "description": "AO shop window builder",
     "path": "unified-os-tools/ShopMaker/ao_shop_builder.html",
     "type": "html",
@@ -38,10 +38,19 @@
   {
     "id": "notum-hud",
     "name": "NotumHUD",
-    "icon": "📈",
+    "icon": "unified-os-tools/icons/notumhud.svg",
     "description": "Original stats HUD",
     "path": "bin/x86/Release/modules/notumhud/index.html",
     "type": "html",
     "persistent": true
+  },
+  {
+    "id": "map-viewer",
+    "name": "MapViewer",
+    "icon": "unified-os-tools/icons/mapviewer.svg",
+    "description": "Interactive map with waypoints",
+    "path": "unified-os-tools/MapViewer/index.html",
+    "type": "html",
+    "persistent": false
   }
 ]
