@@ -1,0 +1,37 @@
+Build started 12/12/2025 1:24:57 PM.
+Logging verbosity is set to: Normal.
+Project "C:\Users\Administrator\source\repos\RubiKit\RubiKit.sln" on node 1 (default targets).
+ValidateSolutionConfiguration:
+  Building solution configuration "Debug|Any CPU".
+Project "C:\Users\Administrator\source\repos\RubiKit\RubiKit.sln" (1) is building "C:\Users\Administrator\source\repos\RubiKit\RubiKit.csproj" (2) on node 1 (default targets).
+C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Current\Bin\Microsoft.Common.CurrentVersion.targets(2433,5): warning MSB3270: There was a mismatch between the processor architecture of the project being built "MSIL" and the processor architecture of the reference "AOSharp.Common", "x86". This mismatch may cause runtime failures. Please consider changing the targeted processor architecture of your project through the Configuration Manager so as to align the processor architectures between your project and references, or take a dependency on references with a processor architecture that matches the targeted processor architecture of your project. [C:\Users\Administrator\source\repos\RubiKit\RubiKit.csproj]
+C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Current\Bin\Microsoft.Common.CurrentVersion.targets(2433,5): warning MSB3270: There was a mismatch between the processor architecture of the project being built "MSIL" and the processor architecture of the reference "AOSharp.Core", "x86". This mismatch may cause runtime failures. Please consider changing the targeted processor architecture of your project through the Configuration Manager so as to align the processor architectures between your project and references, or take a dependency on references with a processor architecture that matches the targeted processor architecture of your project. [C:\Users\Administrator\source\repos\RubiKit\RubiKit.csproj]
+GenerateTargetFrameworkMonikerAttribute:
+Skipping target "GenerateTargetFrameworkMonikerAttribute" because all output files are up-to-date with respect to the input files.
+CoreCompile:
+  C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Current\Bin\Roslyn\csc.exe /noconfig /nowarn:1701,1702 /fullpaths /nostdlib+ /errorreport:prompt /warn:4 /define:DEBUG;TRACE /highentropyva+ /reference:C:\Users\Administrator\source\repos\RubiKit\packages\AOSharp.Common.dll /reference:C:\Users\Administrator\source\repos\RubiKit\packages\AOSharp.Core.dll /reference:"C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.8\Microsoft.CSharp.dll" /reference:"C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.8\mscorlib.dll" /reference:"C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.8\System.Core.dll" /reference:"C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.8\System.Data.DataSetExtensions.dll" /reference:"C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.8\System.Data.dll" /reference:"C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.8\System.dll" /reference:"C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.8\System.Net.Http.dll" /reference:"C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.8\System.Web.Extensions.dll" /reference:"C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.8\System.Xml.dll" /reference:"C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.8\System.Xml.Linq.dll" /debug+ /debug:full /filealign:512 /optimize- /out:obj\Debug\RubiKit.dll /subsystemversion:6.00 /target:library /utf8output /deterministic+ /langversion:7.3 RubiKit.cs Properties\AssemblyInfo.cs LLM\ContextEngine.cs LLM\LLMService.cs LLM\ModuleRegistry.cs LLM\Providers\IAnalysisProvider.cs LLM\Providers\AssistantProvider.cs LLM\Providers\BuildAnalyzer.cs LLM\Providers\CombatAnalyzer.cs LLM\Providers\HydraProvider.cs LLM\Providers\TradingAnalyzer.cs LLM\Providers\XAnalyticsProvider.cs "obj\Debug\.NETFramework,Version=v4.8.AssemblyAttributes.cs"
+C:\Users\Administrator\source\repos\RubiKit\LLM\ModuleRegistry.cs(437,86): error CS1003: Syntax error, ',' expected [C:\Users\Administrator\source\repos\RubiKit\RubiKit.csproj]
+  CompilerServer: server - server processed compilation - RubiKit
+Done Building Project "C:\Users\Administrator\source\repos\RubiKit\RubiKit.csproj" (default targets) -- FAILED.
+
+Done Building Project "C:\Users\Administrator\source\repos\RubiKit\RubiKit.sln" (default targets) -- FAILED.
+
+
+Build FAILED.
+
+"C:\Users\Administrator\source\repos\RubiKit\RubiKit.sln" (default target) (1) ->
+"C:\Users\Administrator\source\repos\RubiKit\RubiKit.csproj" (default target) (2) ->
+(ResolveAssemblyReferences target) -> 
+  C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Current\Bin\Microsoft.Common.CurrentVersion.targets(2433,5): warning MSB3270: There was a mismatch between the processor architecture of the project being built "MSIL" and the processor architecture of the reference "AOSharp.Common", "x86". This mismatch may cause runtime failures. Please consider changing the targeted processor architecture of your project through the Configuration Manager so as to align the processor architectures between your project and references, or take a dependency on references with a processor architecture that matches the targeted processor architecture of your project. [C:\Users\Administrator\source\repos\RubiKit\RubiKit.csproj]
+  C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Current\Bin\Microsoft.Common.CurrentVersion.targets(2433,5): warning MSB3270: There was a mismatch between the processor architecture of the project being built "MSIL" and the processor architecture of the reference "AOSharp.Core", "x86". This mismatch may cause runtime failures. Please consider changing the targeted processor architecture of your project through the Configuration Manager so as to align the processor architectures between your project and references, or take a dependency on references with a processor architecture that matches the targeted processor architecture of your project. [C:\Users\Administrator\source\repos\RubiKit\RubiKit.csproj]
+
+
+"C:\Users\Administrator\source\repos\RubiKit\RubiKit.sln" (default target) (1) ->
+"C:\Users\Administrator\source\repos\RubiKit\RubiKit.csproj" (default target) (2) ->
+(CoreCompile target) -> 
+  C:\Users\Administrator\source\repos\RubiKit\LLM\ModuleRegistry.cs(437,86): error CS1003: Syntax error, ',' expected [C:\Users\Administrator\source\repos\RubiKit\RubiKit.csproj]
+
+    2 Warning(s)
+    1 Error(s)
+
+Time Elapsed 00:00:00.25

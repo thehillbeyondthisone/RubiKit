@@ -1,7 +1,11 @@
-﻿// RubiKit 2.1 — NotumHUD-ready single DLL (for notumhud.js)
+﻿// RubiKit 3.0 — Full LLM Integration + Expanded API
 // C# 7.3 AND .NET 4.8 COMPATIBLE
-// FIXED: Port conflict resolution when switching characters
-// Implements the API structure required by notumhud.js (e.g., /api/state, /api/groups)
+// FEATURES:
+//   - LLM integration via LMStudio/OpenAI-compatible API
+//   - Real-time contextual callouts (combat, trading, builds)
+//   - Modular analysis providers (Combat, Trading, XAnalytics, Hydra, etc.)
+//   - Comprehensive REST API for all modules
+//   - Infinitely expandable architecture
 // Refs: AOSharp.Core, AOSharp.Common, AOSharp.Core.UI
 
 using System;
@@ -17,6 +21,8 @@ using System.Threading.Tasks;
 using AOSharp.Common.GameData;
 using AOSharp.Core;
 using AOSharp.Core.UI;
+using RubiKit.LLM;
+using RubiKit.LLM.Providers;
 
 // Disambiguate File reference
 using File = System.IO.File;
@@ -27,15 +33,18 @@ namespace RubiKit
     {
         private static Kernel _kernel;
 
+        [Obsolete]
         public override void Run(string pluginDir)
         {
             try
             {
                 _kernel = new Kernel(pluginDir ?? "");
                 _kernel.Start();
-                Chat.WriteLine("<color=#4da3ff>[RubiKit 2.1]</color> API on 127.0.0.1:8777  |  /rubi to open NotumHUD");
+                Chat.WriteLine("<color=#4da3ff>[RubiKit 3.0]</color> API on 127.0.0.1:8777 | LLM Ready | /rubi to open");
                 Chat.RegisterCommand("rubi", (cmd, a, w) => _kernel.OpenStatus());
                 Chat.RegisterCommand("about", (cmd, a, w) => _kernel.ShowAbout());
+                Chat.RegisterCommand("rubiask", (cmd, a, w) => _kernel.AskAssistant(string.Join(" ", a)));
+                Chat.RegisterCommand("rubillm", (cmd, a, w) => _kernel.ToggleLLM());
             }
             catch (Exception ex)
             {
@@ -77,15 +86,60 @@ namespace RubiKit
         private bool _disposed = false;
         public const int Port = 8777;
 
+        // LLM Integration
+        private ModuleRegistry _registry;
+        private System.Timers.Timer _calloutTimer;
+
         public Kernel(string baseDir)
         {
             _baseDir = baseDir;
             _statService = new StatService(new StatProvider());
+
+            // Initialize LLM module registry with default LMStudio endpoint
+            var llmConfig = new LLMConfig
+            {
+                Endpoint = "http://192.168.56.1:1234",
+                MaxTokens = 500,
+                Temperature = 0.7f,
+                Enabled = true
+            };
+            _registry = new ModuleRegistry(llmConfig);
+
+            // Wire up stat service to both state store and context engine
             _statService.OnSample += snap =>
             {
                 _state.UpdateStats(snap.Stats);
                 _state.LastUpdatedUtc = DateTime.UtcNow;
+
+                // Feed stats to LLM context engine
+                _registry?.Context?.UpdateStats(snap.Stats);
             };
+
+            // Wire up callouts to chat
+            _registry.OnCallout += callout =>
+            {
+                try
+                {
+                    var color = GetCalloutColor(callout.Type);
+                    Chat.WriteLine($"<color={color}>[{callout.Source}]</color> {callout.Text}");
+                }
+                catch { }
+            };
+        }
+
+        private string GetCalloutColor(CalloutType type)
+        {
+            switch (type)
+            {
+                case CalloutType.Success: return "#7ee787";
+                case CalloutType.Warning: return "#f0883e";
+                case CalloutType.Error: return "#f85149";
+                case CalloutType.Combat: return "#ff6b6b";
+                case CalloutType.Trade: return "#ffd700";
+                case CalloutType.Build: return "#58a6ff";
+                case CalloutType.Tip: return "#a371f7";
+                default: return "#4da3ff";
+            }
         }
 
         public void Start()
@@ -138,6 +192,7 @@ namespace RubiKit
             // Step 1: Stop timers immediately
             try { _pushTimer?.Stop(); _pushTimer?.Dispose(); } catch { }
             try { _cleanupTimer?.Stop(); _cleanupTimer?.Dispose(); } catch { }
+            try { _calloutTimer?.Stop(); _calloutTimer?.Dispose(); } catch { }
 
             // Step 2: Cancel all async operations
             try { _cts.Cancel(); } catch { }
@@ -152,7 +207,10 @@ namespace RubiKit
                 _clients.Clear();
             }
 
-            // Step 4: Stop the HTTP listener FIRST (stops accepting new connections)
+            // Step 4: Dispose the LLM module registry
+            try { _registry?.Dispose(); _registry = null; } catch { }
+
+            // Step 5: Stop the HTTP listener FIRST (stops accepting new connections)
             if (_http != null && _http.IsListening)
             {
                 try
@@ -169,7 +227,7 @@ namespace RubiKit
                 }
             }
 
-            // Step 5: Wait briefly for the HTTP loop to exit
+            // Step 6: Wait briefly for the HTTP loop to exit
             if (_httpLoopTask != null)
             {
                 try
@@ -182,7 +240,7 @@ namespace RubiKit
                 catch { }
             }
 
-            // Step 6: Close the HTTP listener (releases the port)
+            // Step 7: Close the HTTP listener (releases the port)
             if (_http != null)
             {
                 try
@@ -196,10 +254,10 @@ namespace RubiKit
                 }
             }
 
-            // Step 7: Dispose the cancellation token source
+            // Step 8: Dispose the cancellation token source
             try { _cts.Dispose(); } catch { }
 
-            // Step 8: Force garbage collection to release resources faster
+            // Step 9: Force garbage collection to release resources faster
             GC.Collect();
             GC.WaitForPendingFinalizers();
             GC.Collect();
@@ -207,9 +265,9 @@ namespace RubiKit
 
         public void OpenStatus()
         {
-            var url = "http://127.0.0.1:" + Port + "/modules/notumHUD/index.html";
+            var url = "http://127.0.0.1:" + Port + "/index.html";
             try { System.Diagnostics.Process.Start(url); } catch { }
-            Chat.WriteLine("[RubiKit] Opening NotumHUD: " + url);
+            Chat.WriteLine("[RubiKit] Opening Dashboard: " + url);
         }
 
         public void ShowAbout()
@@ -217,10 +275,75 @@ namespace RubiKit
             var asm = Assembly.GetExecutingAssembly();
             var ver = asm?.GetName()?.Version?.ToString() ?? "n/a";
             var sb = new StringBuilder();
-            sb.AppendLine("<font color='#7ee787'>RubiKit</font> v2.1 (notumhud.js)");
+            sb.AppendLine("<font color='#7ee787'>RubiKit</font> v3.0 (LLM Integration)");
             sb.AppendLine("Build: " + ver);
             sb.AppendLine("HTTP: http://localhost:" + Port + "/");
+            sb.AppendLine("LLM: " + (_registry?.LLM?.Config?.Endpoint ?? "Not configured"));
+            sb.AppendLine("LLM Status: " + (_registry?.LLM?.IsConnected == true ? "<color=#7ee787>Connected</color>" : "<color=#f0883e>Disconnected</color>"));
+            sb.AppendLine("Commands: /rubiask <question>, /rubillm (toggle)");
             Chat.WriteLine(sb.ToString());
+        }
+
+        public void AskAssistant(string question)
+        {
+            if (string.IsNullOrWhiteSpace(question))
+            {
+                Chat.WriteLine("[RubiKit] Usage: /rubiask <your question>");
+                return;
+            }
+
+            Chat.WriteLine("<color=#4da3ff>[RubiKit]</color> Asking AI...");
+
+            Task.Run(async () =>
+            {
+                try
+                {
+                    var assistant = _registry?.GetAssistant();
+                    if (assistant == null)
+                    {
+                        Chat.WriteLine("[RubiKit] Assistant not available.", ChatColor.Yellow);
+                        return;
+                    }
+
+                    var response = await assistant.AskAsync(question);
+                    Chat.WriteLine($"<color=#a371f7>[AI]</color> {response}");
+                }
+                catch (Exception ex)
+                {
+                    Chat.WriteLine($"[RubiKit] Error: {ex.Message}", ChatColor.Red);
+                }
+            });
+        }
+
+        public void ToggleLLM()
+        {
+            if (_registry?.LLM == null)
+            {
+                Chat.WriteLine("[RubiKit] LLM service not available.", ChatColor.Yellow);
+                return;
+            }
+
+            _registry.LLM.Config.Enabled = !_registry.LLM.Config.Enabled;
+            var status = _registry.LLM.Config.Enabled ? "ENABLED" : "DISABLED";
+            var color = _registry.LLM.Config.Enabled ? "#7ee787" : "#f0883e";
+            Chat.WriteLine($"<color=#4da3ff>[RubiKit]</color> LLM is now <color={color}>{status}</color>");
+
+            if (_registry.LLM.Config.Enabled)
+            {
+                // Test connection
+                Task.Run(async () =>
+                {
+                    var connected = await _registry.LLM.TestConnectionAsync();
+                    if (connected)
+                    {
+                        Chat.WriteLine("<color=#7ee787>[RubiKit]</color> Connected to LLM at " + _registry.LLM.Config.Endpoint);
+                    }
+                    else
+                    {
+                        Chat.WriteLine("<color=#f0883e>[RubiKit]</color> Could not connect to LLM. Check if LMStudio is running.");
+                    }
+                });
+            }
         }
 
         private async Task HttpLoop()
@@ -288,12 +411,36 @@ namespace RubiKit
 
             try
             {
+                // Core API endpoints
                 if (path == "/events") { HandleEvents(res); return; }
                 if (path == "/api/state") { SendJson(res, 200, _state.ToJson()); return; }
                 if (path == "/api/groups") { SendJson(res, 200, StatProvider.GetGroupsJson()); return; }
                 if (path == "/api/themes") { SendJson(res, 200, "[]"); return; }
                 if (path == "/api/cmd") { HandleCmd(req, res); return; }
                 if (path == "/health") { SendText(res, 200, "OK"); return; }
+
+                // LLM API endpoints - delegate to registry
+                if (path.StartsWith("/api/llm/", StringComparison.OrdinalIgnoreCase) ||
+                    path.StartsWith("/api/context", StringComparison.OrdinalIgnoreCase) ||
+                    path.StartsWith("/api/providers", StringComparison.OrdinalIgnoreCase) ||
+                    path.StartsWith("/api/callouts", StringComparison.OrdinalIgnoreCase) ||
+                    path.StartsWith("/api/analysis", StringComparison.OrdinalIgnoreCase) ||
+                    path.StartsWith("/api/modules", StringComparison.OrdinalIgnoreCase) ||
+                    path.StartsWith("/api/endpoints", StringComparison.OrdinalIgnoreCase) ||
+                    path.StartsWith("/api/events", StringComparison.OrdinalIgnoreCase) ||
+                    path.StartsWith("/api/assistant", StringComparison.OrdinalIgnoreCase) ||
+                    path.StartsWith("/api/calc", StringComparison.OrdinalIgnoreCase))
+                {
+                    HandleRegistryAPI(req, res, path);
+                    return;
+                }
+
+                // Full API listing
+                if (path == "/api" || path == "/api/")
+                {
+                    SendJson(res, 200, GetFullAPIJson());
+                    return;
+                }
 
                 if (path.StartsWith("/modules/", StringComparison.OrdinalIgnoreCase))
                 {
@@ -302,17 +449,28 @@ namespace RubiKit
                 }
                 if (path == "/" || path == "/index.html" || path == "/monitor.html")
                 {
-                    string fileName = path == "/monitor.html" ? "monitor.html" : "index.html";
-                    string fullPath = Path.Combine(_baseDir, "modules", "notumHUD", fileName);
+                    string fileName = path == "/" ? "index.html" : path.TrimStart('/');
+                    string fullPath = Path.Combine(_baseDir, fileName);
 
-                    if (!File.Exists(fullPath) && fileName == "index.html")
+                    if (File.Exists(fullPath))
                     {
-                        SendStatusPage(res);
+                        SendFile(res, fullPath, GetMime(fullPath), 200);
                         return;
                     }
-                    else if (File.Exists(fullPath))
+                }
+
+                // Serve root assets
+                if (path == "/rubikit.css" || path == "/rubikit.js" || path == "/rubikit-llm.css" || path == "/rubikit-llm.js")
+                {
+                    string fileName = path.TrimStart('/');
+                    // CHECK LLM folder for LLM assets
+                    string fullPath = fileName.Contains("llm") 
+                        ? Path.Combine(_baseDir, "LLM", fileName)
+                        : Path.Combine(_baseDir, fileName);
+
+                    if (File.Exists(fullPath))
                     {
-                        ServeStaticUnder(Path.Combine(_baseDir, "modules"), "notumHUD/" + fileName, ctx);
+                        SendFile(res, fullPath, GetMime(fullPath), 200);
                         return;
                     }
                 }
@@ -340,11 +498,173 @@ namespace RubiKit
         {
             res.StatusCode = 200;
             res.ContentType = "text/html; charset=utf-8";
-            var html = "<!doctype html><meta charset='utf-8'><title>RubiKit 2.1</title>" +
-                       "<style>body{font:14px/1.4 system-ui,sans-serif;padding:18px;background:#0e1f12;color:#e9ecf1} a{color:#58a6ff;}</style>" +
-                       "<h2>RubiKit 2.1</h2><p>Online. Open <a href='/modules/notumHUD/index.html'>NotumHUD</a>.</p>";
+            var llmStatus = _registry?.LLM?.IsConnected == true ? "Connected" : "Disconnected";
+            var llmColor = _registry?.LLM?.IsConnected == true ? "#7ee787" : "#f0883e";
+            var html = $@"<!doctype html><meta charset='utf-8'><title>RubiKit 3.0</title>
+<style>
+body{{font:14px/1.4 system-ui,sans-serif;padding:18px;background:#0e1f12;color:#e9ecf1}}
+a{{color:#58a6ff}}
+.status{{padding:4px 8px;border-radius:4px;font-size:12px}}
+.card{{background:#161b22;padding:12px;border-radius:8px;margin:8px 0}}
+h3{{margin:0 0 8px 0;color:#58a6ff}}
+</style>
+<h2>RubiKit 3.0 <span style='color:#7ee787'>●</span></h2>
+<div class='card'>
+<h3>Modules</h3>
+<p><a href='/modules/notumHUD/index.html'>NotumHUD</a> - Real-time character stats dashboard</p>
+</div>
+<div class='card'>
+<h3>LLM Integration</h3>
+<p>Status: <span style='color:{llmColor}'>{llmStatus}</span></p>
+<p>Endpoint: {_registry?.LLM?.Config?.Endpoint ?? "Not configured"}</p>
+</div>
+<div class='card'>
+<h3>API Endpoints</h3>
+<p><a href='/api'>/api</a> - Full API listing</p>
+<p><a href='/api/state'>/api/state</a> - Current character state</p>
+<p><a href='/api/llm/status'>/api/llm/status</a> - LLM service status</p>
+<p><a href='/api/providers'>/api/providers</a> - Analysis providers</p>
+<p><a href='/api/endpoints'>/api/endpoints</a> - All registered endpoints</p>
+</div>";
             var bytes = Encoding.UTF8.GetBytes(html);
             res.OutputStream.Write(bytes, 0, bytes.Length);
+        }
+
+        private void HandleRegistryAPI(HttpListenerRequest req, HttpListenerResponse res, string path)
+        {
+            if (_registry == null)
+            {
+                SendJson(res, 503, "{\"error\":\"Registry not initialized\"}");
+                return;
+            }
+
+            // Parse query parameters
+            var parameters = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            foreach (string key in req.QueryString.AllKeys)
+            {
+                if (!string.IsNullOrEmpty(key))
+                {
+                    parameters[key] = req.QueryString[key];
+                }
+            }
+
+            // For POST requests, also read body parameters
+            if (req.HttpMethod == "POST" && req.HasEntityBody)
+            {
+                try
+                {
+                    using (var reader = new StreamReader(req.InputStream, req.ContentEncoding))
+                    {
+                        var body = reader.ReadToEnd();
+                        // Simple form-encoded or JSON parsing
+                        if (body.StartsWith("{"))
+                        {
+                            // Basic JSON parsing for simple key-value pairs
+                            var pairs = body.Trim('{', '}').Split(',');
+                            foreach (var pair in pairs)
+                            {
+                                var kv = pair.Split(new[] { ':' }, 2);
+                                if (kv.Length == 2)
+                                {
+                                    var key = kv[0].Trim().Trim('"');
+                                    var val = kv[1].Trim().Trim('"');
+                                    parameters[key] = val;
+                                }
+                            }
+                        }
+                        else
+                        {
+                            // Form-encoded
+                            var pairs = body.Split('&');
+                            foreach (var pair in pairs)
+                            {
+                                var kv = pair.Split('=');
+                                if (kv.Length == 2)
+                                {
+                                    parameters[WebUtility.UrlDecode(kv[0])] = WebUtility.UrlDecode(kv[1]);
+                                }
+                            }
+                        }
+                    }
+                }
+                catch { }
+            }
+
+            try
+            {
+                var result = _registry.HandleRequest(req.HttpMethod, path, parameters);
+                SendJson(res, 200, result);
+            }
+            catch (Exception ex)
+            {
+                SendJson(res, 500, $"{{\"error\":\"{ex.Message.Replace("\"", "\\\"")}\"}}");
+            }
+        }
+
+        private string GetFullAPIJson()
+        {
+            var sb = new StringBuilder();
+            sb.Append("{");
+            sb.Append("\"version\":\"3.0\",");
+            sb.Append("\"description\":\"RubiKit API with LLM Integration\",");
+            sb.Append("\"llmEndpoint\":\"" + (_registry?.LLM?.Config?.Endpoint ?? "") + "\",");
+            sb.Append("\"llmEnabled\":" + (_registry?.LLM?.Config?.Enabled ?? false).ToString().ToLower() + ",");
+            sb.Append("\"endpoints\":{");
+
+            // Core endpoints
+            sb.Append("\"core\":[");
+            sb.Append("\"/api/state\",\"/api/groups\",\"/api/themes\",\"/api/cmd\",\"/health\",\"/events\"");
+            sb.Append("],");
+
+            // LLM endpoints
+            sb.Append("\"llm\":[");
+            sb.Append("\"/api/llm/status\",\"/api/llm/config\",\"/api/llm/complete\",\"/api/llm/models\"");
+            sb.Append("],");
+
+            // Context endpoints
+            sb.Append("\"context\":[");
+            sb.Append("\"/api/context\",\"/api/context/combat\",\"/api/context/trading\",\"/api/context/build\"");
+            sb.Append("],");
+
+            // Provider endpoints
+            sb.Append("\"providers\":[");
+            sb.Append("\"/api/providers\",\"/api/providers/config\",\"/api/providers/{id}\",\"/api/providers/{id}/context\"");
+            sb.Append("],");
+
+            // Analysis endpoints
+            sb.Append("\"analysis\":[");
+            sb.Append("\"/api/analysis\",\"/api/analysis/run\"");
+            sb.Append("],");
+
+            // Callout endpoints
+            sb.Append("\"callouts\":[");
+            sb.Append("\"/api/callouts\",\"/api/callouts/dismiss\"");
+            sb.Append("],");
+
+            // Assistant endpoints
+            sb.Append("\"assistant\":[");
+            sb.Append("\"/api/assistant/ask\",\"/api/assistant/history\"");
+            sb.Append("],");
+
+            // Event endpoints
+            sb.Append("\"events\":[");
+            sb.Append("\"/api/events\",\"/api/events/push\"");
+            sb.Append("],");
+
+            // Calculation endpoints
+            sb.Append("\"calc\":[");
+            sb.Append("\"/api/calc/implant\"");
+            sb.Append("],");
+
+            // Module endpoints
+            sb.Append("\"modules\":[");
+            sb.Append("\"/api/modules\",\"/api/endpoints\"");
+            sb.Append("]");
+
+            sb.Append("}");
+            sb.Append("}");
+
+            return sb.ToString();
         }
 
         private void HandleEvents(HttpListenerResponse res)

@@ -1,0 +1,2 @@
+﻿C:\Users\Administrator\source\repos\RubiKit\LLM\ModuleRegistry.cs(437,86): error CS1003: Syntax error, ',' expected [C:\Users\Administrator\source\repos\RubiKit\RubiKit.csproj]
+  C:\Users\Administrator\source\repos\RubiKit\LLM\ModuleRegistry.cs(437,86): error CS1003: Syntax error, ',' expected [C:\Users\Administrator\source\repos\RubiKit\RubiKit.csproj]
