@@ -1,0 +1,307 @@
+/**
+ * RubiKit LLM Components Stylesheet
+ * Styles for callouts, chat panel, and analysis display
+ */
+
+/* ============ Callout Display ============ */
+
+.rubikit-callouts {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    width: 350px;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    pointer-events: none;
+}
+
+.rubikit-callout {
+    background: rgba(22, 27, 34, 0.95);
+    border-left: 3px solid #58a6ff;
+    border-radius: 6px;
+    padding: 10px 12px;
+    font-size: 13px;
+    color: #e6edf3;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    transform: translateX(120%);
+    transition: transform 0.3s ease, opacity 0.3s ease;
+    pointer-events: auto;
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+}
+
+.rubikit-callout.visible {
+    transform: translateX(0);
+}
+
+.rubikit-callout-info { border-color: #58a6ff; }
+.rubikit-callout-success { border-color: #7ee787; }
+.rubikit-callout-warning { border-color: #f0883e; }
+.rubikit-callout-error { border-color: #f85149; }
+.rubikit-callout-tip { border-color: #a371f7; }
+.rubikit-callout-combat { border-color: #ff6b6b; }
+.rubikit-callout-trade { border-color: #ffd700; }
+.rubikit-callout-build { border-color: #58a6ff; }
+
+.callout-source {
+    font-weight: 600;
+    font-size: 11px;
+    text-transform: uppercase;
+    opacity: 0.7;
+    white-space: nowrap;
+}
+
+.rubikit-callout-info .callout-source { color: #58a6ff; }
+.rubikit-callout-success .callout-source { color: #7ee787; }
+.rubikit-callout-warning .callout-source { color: #f0883e; }
+.rubikit-callout-error .callout-source { color: #f85149; }
+.rubikit-callout-tip .callout-source { color: #a371f7; }
+.rubikit-callout-combat .callout-source { color: #ff6b6b; }
+.rubikit-callout-trade .callout-source { color: #ffd700; }
+.rubikit-callout-build .callout-source { color: #58a6ff; }
+
+.callout-text {
+    flex: 1;
+    line-height: 1.4;
+}
+
+.callout-dismiss {
+    background: none;
+    border: none;
+    color: #8b949e;
+    font-size: 16px;
+    cursor: pointer;
+    padding: 0 4px;
+    opacity: 0.6;
+    transition: opacity 0.2s;
+}
+
+.callout-dismiss:hover {
+    opacity: 1;
+    color: #f85149;
+}
+
+/* ============ Chat Panel ============ */
+
+.rubikit-chat {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    background: #0d1117;
+    border-radius: 8px;
+    overflow: hidden;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.chat-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    background: #161b22;
+    border-bottom: 1px solid #30363d;
+    font-weight: 600;
+    color: #e6edf3;
+}
+
+.chat-status {
+    font-size: 10px;
+    color: #7ee787;
+}
+
+.chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.chat-message {
+    max-width: 85%;
+    padding: 10px 14px;
+    border-radius: 12px;
+    font-size: 14px;
+    line-height: 1.5;
+    word-wrap: break-word;
+}
+
+.chat-user {
+    align-self: flex-end;
+    background: #238636;
+    color: #fff;
+    border-bottom-right-radius: 4px;
+}
+
+.chat-assistant {
+    align-self: flex-start;
+    background: #21262d;
+    color: #e6edf3;
+    border-bottom-left-radius: 4px;
+}
+
+.chat-error {
+    align-self: center;
+    background: rgba(248, 81, 73, 0.2);
+    color: #f85149;
+    font-size: 12px;
+}
+
+.chat-input-area {
+    display: flex;
+    gap: 8px;
+    padding: 12px 16px;
+    background: #161b22;
+    border-top: 1px solid #30363d;
+}
+
+.chat-input {
+    flex: 1;
+    background: #0d1117;
+    border: 1px solid #30363d;
+    border-radius: 6px;
+    padding: 10px 14px;
+    color: #e6edf3;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.chat-input:focus {
+    border-color: #58a6ff;
+}
+
+.chat-input::placeholder {
+    color: #8b949e;
+}
+
+.chat-send {
+    background: #238636;
+    border: none;
+    border-radius: 6px;
+    padding: 10px 18px;
+    color: #fff;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.chat-send:hover {
+    background: #2ea043;
+}
+
+.chat-send:active {
+    background: #238636;
+}
+
+/* ============ Analysis Panel ============ */
+
+.rubikit-analysis {
+    background: #0d1117;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.analysis-header {
+    padding: 12px 16px;
+    background: #161b22;
+    border-bottom: 1px solid #30363d;
+    font-weight: 600;
+    color: #e6edf3;
+}
+
+.analysis-results {
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.analysis-result {
+    background: #21262d;
+    border-radius: 6px;
+    padding: 10px 12px;
+    border-left: 3px solid #58a6ff;
+}
+
+.analysis-result.severity-info { border-color: #58a6ff; }
+.analysis-result.severity-suggestion { border-color: #a371f7; }
+.analysis-result.severity-warning { border-color: #f0883e; }
+.analysis-result.severity-critical { border-color: #f85149; }
+.analysis-result.severity-opportunity { border-color: #7ee787; }
+
+.analysis-title {
+    font-weight: 600;
+    font-size: 13px;
+    color: #e6edf3;
+    margin-bottom: 4px;
+}
+
+.analysis-content {
+    font-size: 12px;
+    color: #8b949e;
+    line-height: 1.4;
+}
+
+/* ============ Provider Status ============ */
+
+.provider-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.provider-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    background: #21262d;
+    border-radius: 6px;
+}
+
+.provider-status {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #8b949e;
+}
+
+.provider-status.enabled {
+    background: #7ee787;
+}
+
+.provider-name {
+    flex: 1;
+    font-size: 13px;
+    color: #e6edf3;
+}
+
+.provider-domain {
+    font-size: 11px;
+    color: #8b949e;
+    text-transform: uppercase;
+}
+
+/* ============ Utility Classes ============ */
+
+.rubikit-scrollbar::-webkit-scrollbar {
+    width: 8px;
+}
+
+.rubikit-scrollbar::-webkit-scrollbar-track {
+    background: #0d1117;
+}
+
+.rubikit-scrollbar::-webkit-scrollbar-thumb {
+    background: #30363d;
+    border-radius: 4px;
+}
+
+.rubikit-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #484f58;
+}
