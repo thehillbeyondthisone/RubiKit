@@ -207,9 +207,9 @@ namespace RubiKit
 
         public void OpenStatus()
         {
-            var url = "http://127.0.0.1:" + Port + "/modules/notumhud/index.html";
+            var url = "http://127.0.0.1:" + Port + "/";
             try { System.Diagnostics.Process.Start(url); } catch { }
-            Chat.WriteLine("[RubiKit] Opening NotumHUD: " + url);
+            Chat.WriteLine("[RubiKit] Opening RubiKit Desktop: " + url);
         }
 
         public void ShowAbout()
@@ -300,19 +300,24 @@ namespace RubiKit
                     ServeStaticUnder(Path.Combine(_baseDir, "modules"), path.Substring("/modules/".Length), ctx);
                     return;
                 }
-                if (path == "/" || path == "/index.html" || path == "/monitor.html")
+                if (path == "/" || path == "/index.html")
                 {
-                    string fileName = path == "/monitor.html" ? "monitor.html" : "index.html";
-                    string fullPath = Path.Combine(_baseDir, "modules", "notumhud", fileName);
-
-                    if (!File.Exists(fullPath) && fileName == "index.html")
+                    // Serve the desktop homepage
+                    string desktopPath = Path.Combine(_baseDir, "modules", "desktop", "index.html");
+                    if (File.Exists(desktopPath))
                     {
-                        SendStatusPage(res);
+                        ServeStaticUnder(Path.Combine(_baseDir, "modules"), "desktop/index.html", ctx);
                         return;
                     }
-                    else if (File.Exists(fullPath))
+                    SendStatusPage(res);
+                    return;
+                }
+                if (path == "/monitor.html")
+                {
+                    string fullPath = Path.Combine(_baseDir, "modules", "notumhud", "monitor.html");
+                    if (File.Exists(fullPath))
                     {
-                        ServeStaticUnder(Path.Combine(_baseDir, "modules"), "notumhud/" + fileName, ctx);
+                        ServeStaticUnder(Path.Combine(_baseDir, "modules"), "notumhud/monitor.html", ctx);
                         return;
                     }
                 }
@@ -342,7 +347,7 @@ namespace RubiKit
             res.ContentType = "text/html; charset=utf-8";
             var html = "<!doctype html><meta charset='utf-8'><title>RubiKit 2.1</title>" +
                        "<style>body{font:14px/1.4 system-ui,sans-serif;padding:18px;background:#0e1f12;color:#e9ecf1} a{color:#58a6ff;}</style>" +
-                       "<h2>RubiKit 2.1</h2><p>Online. Open <a href='/modules/notumhud/index.html'>NotumHUD</a>.</p>";
+                       "<h2>RubiKit 2.1</h2><p>Online. Desktop module not found. <a href='/modules/notumhud/index.html'>Open NotumHUD directly</a>.</p>";
             var bytes = Encoding.UTF8.GetBytes(html);
             res.OutputStream.Write(bytes, 0, bytes.Length);
         }

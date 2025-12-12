@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RubiKit Desktop</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg-primary: #0a0f14;
+      --bg-secondary: #121a22;
+      --bg-card: #1a242e;
+      --bg-card-hover: #243040;
+      --text-primary: #e4e8ec;
+      --text-secondary: #8b9aa8;
+      --accent: #4da3ff;
+      --accent-glow: rgba(77, 163, 255, 0.3);
+      --border: #2a3a4a;
+    }
+
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Animated background */
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background:
+        radial-gradient(ellipse at 20% 20%, rgba(77, 163, 255, 0.08) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 80%, rgba(77, 163, 255, 0.05) 0%, transparent 50%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    header {
+      position: relative;
+      z-index: 1;
+      padding: 24px 32px;
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .logo {
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--accent);
+      letter-spacing: -0.5px;
+    }
+
+    .logo span {
+      color: var(--text-primary);
+      font-weight: 400;
+    }
+
+    .version {
+      font-size: 12px;
+      color: var(--text-secondary);
+      background: var(--bg-card);
+      padding: 4px 10px;
+      border-radius: 12px;
+    }
+
+    .status {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #4ade80;
+      box-shadow: 0 0 8px rgba(74, 222, 128, 0.5);
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    main {
+      position: relative;
+      z-index: 1;
+      flex: 1;
+      padding: 48px 32px;
+      max-width: 1200px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    h2 {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 24px;
+    }
+
+    .modules-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 20px;
+    }
+
+    .module-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-decoration: none;
+      color: inherit;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: 16px;
+    }
+
+    .module-card:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--accent);
+      transform: translateY(-4px);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), 0 0 0 1px var(--accent-glow);
+    }
+
+    .module-icon {
+      width: 64px;
+      height: 64px;
+      border-radius: 16px;
+      background: linear-gradient(135deg, var(--accent) 0%, #2563eb 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      box-shadow: 0 4px 16px rgba(77, 163, 255, 0.3);
+    }
+
+    .module-name {
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .module-desc {
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.4;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 64px;
+      color: var(--text-secondary);
+    }
+
+    .empty-state svg {
+      width: 64px;
+      height: 64px;
+      margin-bottom: 16px;
+      opacity: 0.5;
+    }
+
+    footer {
+      position: relative;
+      z-index: 1;
+      padding: 16px 32px;
+      background: var(--bg-secondary);
+      border-top: 1px solid var(--border);
+      font-size: 12px;
+      color: var(--text-secondary);
+      display: flex;
+      justify-content: space-between;
+    }
+
+    footer a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    footer a:hover {
+      text-decoration: underline;
+    }
+
+    /* Loading state */
+    .loading {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 64px;
+    }
+
+    .spinner {
+      width: 32px;
+      height: 32px;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="logo">Rubi<span>Kit</span></div>
+    <div class="version">v2.1</div>
+    <div class="status">
+      <div class="status-dot"></div>
+      <span>Connected</span>
+    </div>
+  </header>
+
+  <main>
+    <h2>Modules</h2>
+    <div id="modules-container" class="loading">
+      <div class="spinner"></div>
+    </div>
+  </main>
+
+  <footer>
+    <span>RubiKit Desktop</span>
+    <a href="/api/state" target="_blank">API Status</a>
+  </footer>
+
+  <script>
+    const MODULES = [
+      {
+        id: 'notumhud',
+        name: 'NotumHUD',
+        icon: '📊',
+        description: 'Real-time character stats, damage modifiers, and armor classes',
+        path: '/modules/notumhud/index.html'
+      }
+    ];
+
+    async function init() {
+      const container = document.getElementById('modules-container');
+
+      // Try to load modules.json for dynamic module discovery
+      let modules = [...MODULES];
+
+      try {
+        // Check API health
+        const health = await fetch('/health');
+        if (!health.ok) throw new Error('API not available');
+      } catch (e) {
+        document.querySelector('.status-dot').style.background = '#ef4444';
+        document.querySelector('.status span').textContent = 'Disconnected';
+      }
+
+      // Render modules
+      if (modules.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+            </svg>
+            <p>No modules installed</p>
+          </div>
+        `;
+        container.classList.remove('loading');
+        return;
+      }
+
+      container.classList.remove('loading');
+      container.className = 'modules-grid';
+      container.innerHTML = modules.map(m => `
+        <a href="${m.path}" class="module-card">
+          <div class="module-icon">${m.icon}</div>
+          <div class="module-name">${m.name}</div>
+          <div class="module-desc">${m.description || ''}</div>
+        </a>
+      `).join('');
+    }
+
+    document.addEventListener('DOMContentLoaded', init);
+  </script>
+</body>
+</html>
