@@ -511,7 +511,10 @@ h3{{margin:0 0 8px 0;color:#58a6ff}}
 <h2>RubiKit 3.0 <span style='color:#7ee787'>●</span></h2>
 <div class='card'>
 <h3>Modules</h3>
-<p><a href='/modules/notumHUD/index.html'>NotumHUD</a> - Real-time character stats dashboard</p>
+<p><a href='/index.html'>Desktop</a> - Main homescreen with all modules</p>
+<p><a href='/unified-os-tools/Hydra.html'>Hydra</a> - Chat observer with LLM</p>
+<p><a href='/unified-os-tools/Xanalytics/index.html'>Xanalytics</a> - Analytics dashboard</p>
+<p><a href='/bin/x86/Release/modules/notumhud/index.html'>NotumHUD</a> - Stats HUD</p>
 </div>
 <div class='card'>
 <h3>LLM Integration</h3>
