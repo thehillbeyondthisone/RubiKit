@@ -1,0 +1,252 @@
+<!-- NotumHUD · STAT-HUD Crystal (SVG-only, PalettePilot-ready) -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 360" role="img" aria-label="NotumHUD Status">
+  <style>
+    /* ======= Palette tokens (inherit from your theme) ======= */
+    :root{
+      --hud-bg: transparent;
+      --hud-ink: #8dd3ff;          /* ticks/labels */
+      --hud-glow: #3aa2ff;         /* primary accent */
+      --hud-coreA:#bfe6ff;         /* crystal gradient A */
+      --hud-coreB:#3aa2ff;         /* crystal gradient B */
+      --hud-body:#0b1426;          /* crystal body */
+      --hud-grid:#1a2a40;          /* grid/crosshair */
+      --hud-good:#49e0b4;         /* green arc */
+      --hud-warn:#ffd36b;         /* amber arc */
+      --hud-crit:#ff6a8a;         /* red arc */
+    }
+
+    /* ======= Global helpers ======= */
+    .soft { filter:url(#soft) }
+    .glow { filter:url(#outerGlow) }
+    .ink  { stroke:var(--hud-ink); stroke-opacity:.8 }
+    .txt  { fill:var(--hud-ink); font:700 10px/1 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; letter-spacing:.04em }
+    .tiny { font:600 8px/1 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; opacity:.7 }
+
+    @keyframes spin     { to { transform: rotate(360deg) } }
+    @keyframes spinrev  { to { transform: rotate(-360deg) } }
+    @keyframes sweep    { 0%{opacity:.0; transform:rotate(-45deg)} 10%{opacity:.5} 100%{opacity:.0; transform:rotate(315deg)} }
+    @keyframes pulse    { 0%,100%{ transform:scale(1); filter: drop-shadow(0 0 8px rgba(58,162,255,.35)); } 50%{ transform:scale(1.03); filter: drop-shadow(0 0 18px rgba(58,162,255,.7)); } }
+    @keyframes tickdash { to { stroke-dashoffset: -320 } }
+    @keyframes arcfill  { 0%{ stroke-dashoffset: 440 } 50%{ stroke-dashoffset: 220 } 100%{ stroke-dashoffset: 440 } }
+    @keyframes rise     { 0%{ transform:translateY(12px); opacity:0 } 25%{opacity:1} 100%{ transform:translateY(-12px); opacity:0 } }
+
+    /* ======= Outer dial ======= */
+    .dial { transform-origin:180px 180px; }
+    .ticks path{ stroke-width:1.2; stroke-linecap:round; }
+    .ticks path.long{ stroke-width:1.6 }
+    .ticks path.anim{ stroke-dasharray:10 6; animation: tickdash 10s linear infinite; }
+
+    /* ======= Gauges ======= */
+    .arc { fill:none; stroke-linecap:round; stroke-width:6; transform-origin:180px 180px; }
+    .arc.good{ stroke:var(--hud-good) }
+    .arc.warn{ stroke:var(--hud-warn) }
+    .arc.crit{ stroke:var(--hud-crit) }
+    .arc.anim{ stroke-dasharray:440; stroke-dashoffset:440; animation: arcfill 7s ease-in-out infinite; }
+
+    /* ======= Crystal ======= */
+    .crystal { animation: pulse 2.8s ease-in-out infinite; transform-origin:180px 180px; }
+    .crys-body { fill:var(--hud-body) }
+    .crys-edge { fill:none; stroke:url(#edgeGrad); stroke-width:4; opacity:.9 }
+    .diamond   { fill:url(#coreGrad); stroke:var(--hud-ink); stroke-width:3; opacity:.95 }
+
+    /* ======= Orbiting shards ======= */
+    .shards-a, .shards-b { transform-origin:180px 180px }
+    .shards-a { animation: spin 18s linear infinite }
+    .shards-b { animation: spinrev 24s linear infinite }
+    .sh { fill:url(#edgeGrad); opacity:.85 }
+
+    /* ======= Graph bars (inside diamond) ======= */
+    .bars rect{ fill:url(#barGrad); transform-origin: center bottom; }
+    .bars rect:nth-child(1){ animation: rise 1600ms ease-in-out infinite }
+    .bars rect:nth-child(2){ animation: rise 1600ms ease-in-out infinite .1s }
+    .bars rect:nth-child(3){ animation: rise 1600ms ease-in-out infinite .2s }
+    .bars rect:nth-child(4){ animation: rise 1600ms ease-in-out infinite .3s }
+    .bars rect:nth-child(5){ animation: rise 1600ms ease-in-out infinite .4s }
+
+    /* ======= Reel numbers (stat counters, CSS-only) ======= */
+    .reel { clip-path: inset(0 0 80% 0); height:12px }
+    .reel g{ transform: translateY(0); animation: reel 5s steps(10,end) infinite }
+    @keyframes reel { to { transform: translateY(-100%) } }
+
+    /* ======= Sweeping scanner ======= */
+    .scanner{ transform-origin:180px 180px; animation: sweep 4.5s ease-in-out infinite }
+
+    /* ======= Sparkles ======= */
+    .spark{ fill:#fff; opacity:.9 }
+  </style>
+
+  <!-- Filters & Gradients -->
+  <defs>
+    <filter id="soft" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="2.2" result="b"></feGaussianBlur>
+      <feBlend in="SourceGraphic" in2="b" mode="screen"></feBlend>
+    </filter>
+    <filter id="outerGlow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="4" result="g"></feGaussianBlur><feMerge><feMergeNode in="g"></feMergeNode><feMergeNode in="SourceGraphic"></feMergeNode></feMerge>
+    </filter>
+
+    <linearGradient id="coreGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="var(--hud-coreA)"></stop>
+      <stop offset="100%" stop-color="var(--hud-coreB)"></stop>
+    </linearGradient>
+    <linearGradient id="edgeGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="var(--hud-ink)" stop-opacity=".95"></stop>
+      <stop offset="100%" stop-color="var(--hud-coreB)" stop-opacity=".65"></stop>
+    </linearGradient>
+    <linearGradient id="barGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="var(--hud-coreA)"></stop>
+      <stop offset="100%" stop-color="var(--hud-coreB)" stop-opacity=".15"></stop>
+    </linearGradient>
+
+    <!-- Mask to clip bars to inner diamond -->
+    <mask id="diamondMask">
+      <rect width="360" height="360" fill="#000"></rect>
+      <polygon points="180,206 156,180 180,154 204,180" fill="#fff"></polygon>
+    </mask>
+  </defs>
+
+  <!-- Subtle grid -->
+  <g opacity=".45" class="soft">
+    <circle cx="180" cy="180" r="160" fill="none" stroke="var(--hud-grid)" stroke-width="1"></circle>
+    <circle cx="180" cy="180" r="120" fill="none" stroke="var(--hud-grid)" stroke-width="1"></circle>
+    <circle cx="180" cy="180" r="80" fill="none" stroke="var(--hud-grid)" stroke-width="1"></circle>
+    <line x1="20" y1="180" x2="340" y2="180" stroke="var(--hud-grid)" stroke-width="1"></line>
+    <line x1="180" y1="20" x2="180" y2="340" stroke="var(--hud-grid)" stroke-width="1"></line>
+  </g>
+
+  <!-- Outer dial + animated tick ring -->
+  <g class="dial">
+    <g class="ticks ink">
+      <!-- long ticks each 30deg -->
+      <g transform="translate(180,180)">
+        <!-- 12 long ticks -->
+        <g>
+          <path class="long" d="M0,-148 v-10"></path>
+          <use href="#lt" transform="rotate(30)"></use>
+          <use href="#lt" transform="rotate(60)"></use>
+          <use href="#lt" transform="rotate(90)"></use>
+          <use href="#lt" transform="rotate(120)"></use>
+          <use href="#lt" transform="rotate(150)"></use>
+          <use href="#lt" transform="rotate(180)"></use>
+          <use href="#lt" transform="rotate(210)"></use>
+          <use href="#lt" transform="rotate(240)"></use>
+          <use href="#lt" transform="rotate(270)"></use>
+          <use href="#lt" transform="rotate(300)"></use>
+          <use href="#lt" transform="rotate(330)"></use>
+        </g>
+        <!-- 60 small ticks -->
+        <g id="sm">
+          <path d="M0,-148 v-6" stroke-width="1"></path>
+        </g>
+        <g>
+          <use href="#sm" transform="rotate(6)"></use><use href="#sm" transform="rotate(12)"></use><use href="#sm" transform="rotate(18)"></use><use href="#sm" transform="rotate(24)"></use>
+          <use href="#sm" transform="rotate(36)"></use><use href="#sm" transform="rotate(42)"></use><use href="#sm" transform="rotate(48)"></use><use href="#sm" transform="rotate(54)"></use>
+          <use href="#sm" transform="rotate(66)"></use><use href="#sm" transform="rotate(72)"></use><use href="#sm" transform="rotate(78)"></use><use href="#sm" transform="rotate(84)"></use>
+          <use href="#sm" transform="rotate(96)"></use><use href="#sm" transform="rotate(102)"></use><use href="#sm" transform="rotate(108)"></use><use href="#sm" transform="rotate(114)"></use>
+          <use href="#sm" transform="rotate(126)"></use><use href="#sm" transform="rotate(132)"></use><use href="#sm" transform="rotate(138)"></use><use href="#sm" transform="rotate(144)"></use>
+          <use href="#sm" transform="rotate(156)"></use><use href="#sm" transform="rotate(162)"></use><use href="#sm" transform="rotate(168)"></use><use href="#sm" transform="rotate(174)"></use>
+          <use href="#sm" transform="rotate(186)"></use><use href="#sm" transform="rotate(192)"></use><use href="#sm" transform="rotate(198)"></use><use href="#sm" transform="rotate(204)"></use>
+          <use href="#sm" transform="rotate(216)"></use><use href="#sm" transform="rotate(222)"></use><use href="#sm" transform="rotate(228)"></use><use href="#sm" transform="rotate(234)"></use>
+          <use href="#sm" transform="rotate(246)"></use><use href="#sm" transform="rotate(252)"></use><use href="#sm" transform="rotate(258)"></use><use href="#sm" transform="rotate(264)"></use>
+          <use href="#sm" transform="rotate(276)"></use><use href="#sm" transform="rotate(282)"></use><use href="#sm" transform="rotate(288)"></use><use href="#sm" transform="rotate(294)"></use>
+          <use href="#sm" transform="rotate(306)"></use><use href="#sm" transform="rotate(312)"></use><use href="#sm" transform="rotate(318)"></use><use href="#sm" transform="rotate(324)"></use>
+          <use href="#sm" transform="rotate(336)"></use><use href="#sm" transform="rotate(342)"></use><use href="#sm" transform="rotate(348)"></use><use href="#sm" transform="rotate(354)"></use>
+        </g>
+      </g>
+      <!-- animated dashed ring -->
+      <circle class="anim" cx="180" cy="180" r="154" fill="none"></circle>
+    </g>
+  </g>
+
+  <!-- Three status arcs (looping fill) -->
+  <g class="glow">
+    <circle class="arc good anim" cx="180" cy="180" r="120" transform="rotate(-90 180 180)"></circle>
+    <circle class="arc warn anim" cx="180" cy="180" r="104" transform="rotate(0 180 180)"></circle>
+    <circle class="arc crit anim" cx="180" cy="180" r="88" transform="rotate(90 180 180)"></circle>
+  </g>
+
+  <!-- Sweeping scanner wedge -->
+  <g class="scanner" opacity=".25">
+    <path d="M180,180 L180,40 A140,140 0 0 1 290,90 Z" fill="var(--hud-glow)"></path>
+  </g>
+
+  <!-- Orbiting shards -->
+  <g class="shards-a">
+    <polygon class="sh" points="180,54 188,78 180,86 172,78"></polygon>
+    <polygon class="sh" points="264,140 252,150 246,138 256,128"></polygon>
+    <polygon class="sh" points="96,140 104,128 116,138 104,150"></polygon>
+  </g>
+  <g class="shards-b">
+    <polygon class="sh" points="180,306 188,282 180,274 172,282"></polygon>
+    <polygon class="sh" points="264,220 256,232 246,222 252,210"></polygon>
+    <polygon class="sh" points="96,220 104,210 116,222 104,232"></polygon>
+  </g>
+
+  <!-- Notum crystal -->
+  <g class="crystal soft">
+    <!-- Outer silhouette -->
+    <path class="crys-body" d="M180,36
+             C202,72 250,126 250,174
+             C250,229 219,272 180,288
+             C141,272 110,229 110,174
+             C110,126 158,72 180,36 Z"></path>
+    <!-- Inner bevel -->
+    <path class="crys-edge" d="M180,56
+             C196,84 232,129 232,172
+             C232,212 209,247 180,260
+             C151,247 128,212 128,172
+             C128,129 164,84 180,56 Z"></path>
+    <!-- Inner diamond -->
+    <polygon class="diamond" points="180,206 156,180 180,154 204,180"></polygon>
+  </g>
+
+  <!-- Bars inside diamond -->
+  <g class="bars" mask="url(#diamondMask)">
+    <rect x="166" y="162" width="6" height="44" rx="2"></rect>
+    <rect x="174" y="152" width="6" height="54" rx="2"></rect>
+    <rect x="182" y="160" width="6" height="48" rx="2"></rect>
+    <rect x="190" y="148" width="6" height="60" rx="2"></rect>
+    <rect x="198" y="158" width="6" height="50" rx="2"></rect>
+  </g>
+
+  <!-- Readouts -->
+  <g class="txt soft">
+    <!-- Labels -->
+    <text x="60" y="310" class="tiny">CORE</text>
+    <text x="150" y="310" class="tiny">STABILITY</text>
+    <text x="268" y="310" class="tiny">FLUX</text>
+
+    <!-- Reel counters (pure CSS animation) -->
+    <g transform="translate(48,316)" class="reel">
+      <g>
+        <text y="0">0</text><text y="12">1</text><text y="24">2</text><text y="36">3</text><text y="48">4</text>
+        <text y="60">5</text><text y="72">6</text><text y="84">7</text><text y="96">8</text><text y="108">9</text>
+      </g>
+    </g>
+    <g transform="translate(168,316)" class="reel">
+      <g>
+        <text y="0">0</text><text y="12">1</text><text y="24">2</text><text y="36">3</text><text y="48">4</text>
+        <text y="60">5</text><text y="72">6</text><text y="84">7</text><text y="96">8</text><text y="108">9</text>
+      </g>
+    </g>
+    <g transform="translate(286,316)" class="reel">
+      <g>
+        <text y="0">0</text><text y="12">1</text><text y="24">2</text><text y="36">3</text><text y="48">4</text>
+        <text y="60">5</text><text y="72">6</text><text y="84">7</text><text y="96">8</text><text y="108">9</text>
+      </g>
+    </g>
+  </g>
+
+  <!-- Orbit sparkles -->
+  <g>
+    <circle class="spark soft" cx="180" cy="26" r="1.8"></circle>
+    <circle class="spark soft" cx="330" cy="180" r="1.6"></circle>
+    <circle class="spark soft" cx="30" cy="180" r="1.6"></circle>
+    <circle class="spark soft" cx="180" cy="334" r="1.8"></circle>
+  </g>
+
+  <!-- defs instance for long tick -->
+  <defs>
+    <path id="lt" d="M0,-148 v-10"></path>
+  </defs>
+</svg>

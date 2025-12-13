@@ -1,0 +1,16 @@
+[
+  {
+    "id": "notumhud",
+    "name": "NotumHUD",
+    "icon": "chart",
+    "path": "modules/notumhud/index.html",
+    "persistent": true
+  },
+  {
+    "id": "llm",
+    "name": "LLM",
+    "icon": "brain",
+    "path": "modules/llm/index.html",
+    "persistent": true
+  }
+]
