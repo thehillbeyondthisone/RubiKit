@@ -1,1 +1,854 @@
-<!doctype html><meta charset='utf-8'><title>RubiKit</title><link rel='stylesheet' href='rubikit.css'><div id='rk-tabs'></div><div id='rk-view'></div><script src='rubikit.js'></script>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RubiKit Desktop</title>
+  <link rel="stylesheet" href="shared/rubikit-theme.css">
+  <style>
+    body {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Header */
+    header {
+      position: relative;
+      z-index: 10;
+      padding: var(--rk-space-lg) var(--rk-space-xl);
+      background: var(--rk-bg-secondary);
+      border-bottom: 1px solid var(--rk-border);
+      display: flex;
+      align-items: center;
+      gap: var(--rk-space-md);
+    }
+
+    .header-controls {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: var(--rk-space-lg);
+    }
+
+    .theme-controls {
+      display: flex;
+      align-items: center;
+      gap: var(--rk-space-sm);
+    }
+
+    .theme-controls label {
+      font-size: 0.75rem;
+      color: var(--rk-text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .theme-controls select {
+      font-family: var(--rk-font-ui);
+      font-size: 0.8rem;
+      background: var(--rk-bg-card);
+      border: 1px solid var(--rk-border);
+      color: var(--rk-text-primary);
+      padding: 0.35rem 0.75rem;
+      border-radius: var(--rk-radius);
+      cursor: pointer;
+      transition: all var(--rk-transition);
+    }
+
+    .theme-controls select:hover {
+      border-color: var(--rk-accent);
+    }
+
+    .theme-controls select:focus {
+      outline: none;
+      border-color: var(--rk-accent);
+      box-shadow: 0 0 0 3px var(--rk-ring);
+    }
+
+    .status {
+      display: flex;
+      align-items: center;
+      gap: var(--rk-space-sm);
+      font-size: 0.8rem;
+      color: var(--rk-text-secondary);
+    }
+
+    /* Main Content */
+    main {
+      position: relative;
+      z-index: 1;
+      flex: 1;
+      padding: var(--rk-space-xl);
+      max-width: 1400px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    .section-title {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--rk-text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: var(--rk-space-lg);
+      display: flex;
+      align-items: center;
+      gap: var(--rk-space-sm);
+    }
+
+    .section-title::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--rk-border);
+    }
+
+    /* Modules Grid */
+    .modules-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: var(--rk-space-lg);
+      margin-bottom: var(--rk-space-xl);
+    }
+
+    .module-card {
+      background: var(--rk-bg-card);
+      border: 1px solid var(--rk-border);
+      border-radius: var(--rk-radius-xl);
+      padding: var(--rk-space-lg);
+      cursor: pointer;
+      transition: all var(--rk-transition);
+      text-decoration: none;
+      color: inherit;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: var(--rk-space-md);
+    }
+
+    .module-card:hover {
+      background: var(--rk-bg-card-hover);
+      border-color: var(--rk-accent);
+      transform: translateY(-4px);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), 0 0 0 1px var(--rk-accent-glow);
+    }
+
+    .module-icon {
+      width: 72px;
+      height: 72px;
+      border-radius: var(--rk-radius-lg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 16px var(--rk-accent-glow);
+      transition: transform var(--rk-transition), box-shadow var(--rk-transition);
+      overflow: hidden;
+    }
+
+    .module-icon img {
+      width: 48px;
+      height: 48px;
+    }
+
+    .module-card:hover .module-icon {
+      transform: scale(1.08);
+      box-shadow: 0 6px 24px var(--rk-accent-glow);
+    }
+
+    /* Module-specific icon colors */
+    .icon-hydra { background: linear-gradient(135deg, #a855f7 0%, #6b21a8 100%); }
+    .icon-xanalytics { background: linear-gradient(135deg, #22c55e 0%, #15803d 100%); }
+    .icon-notumvision { background: linear-gradient(135deg, #38bdf8 0%, #0077b6 100%); }
+    .icon-shopmaker { background: linear-gradient(135deg, #f59e0b 0%, #b45309 100%); }
+    .icon-notumhud { background: linear-gradient(135deg, #06b6d4 0%, #0e7490 100%); }
+    .icon-mapviewer { background: linear-gradient(135deg, #ec4899 0%, #be185d 100%); }
+
+    .module-name {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--rk-text-primary);
+    }
+
+    .module-desc {
+      font-size: 0.8rem;
+      color: var(--rk-text-secondary);
+      line-height: 1.5;
+    }
+
+    .module-tag {
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 0.2rem 0.5rem;
+      border-radius: var(--rk-radius-xl);
+      background: var(--rk-bg-interactive);
+      color: var(--rk-accent);
+    }
+
+    .module-tag.persistent {
+      background: rgba(34, 197, 94, 0.15);
+      color: var(--rk-success);
+    }
+
+    /* Footer */
+    footer {
+      position: relative;
+      z-index: 1;
+      padding: var(--rk-space-md) var(--rk-space-xl);
+      background: var(--rk-bg-secondary);
+      border-top: 1px solid var(--rk-border);
+      font-size: 0.75rem;
+      color: var(--rk-text-muted);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    footer a {
+      color: var(--rk-accent);
+      text-decoration: none;
+      transition: color var(--rk-transition);
+    }
+
+    footer a:hover {
+      color: var(--rk-text-primary);
+    }
+
+    /* ===== Settings Modal ===== */
+    .settings-btn {
+      background: var(--rk-bg-card);
+      border: 1px solid var(--rk-border);
+      color: var(--rk-text-secondary);
+      padding: 0.5rem;
+      border-radius: var(--rk-radius);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all var(--rk-transition);
+    }
+
+    .settings-btn:hover {
+      border-color: var(--rk-accent);
+      color: var(--rk-accent);
+    }
+
+    .settings-btn svg {
+      width: 20px;
+      height: 20px;
+      fill: currentColor;
+    }
+
+    #settings-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 200;
+      background: rgba(0,0,0,0.7);
+      backdrop-filter: blur(4px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: var(--rk-space-lg);
+    }
+
+    #settings-modal.open {
+      display: flex;
+    }
+
+    .settings-panel {
+      background: var(--rk-bg-secondary);
+      border: 1px solid var(--rk-border);
+      border-radius: var(--rk-radius-lg);
+      width: 100%;
+      max-width: 600px;
+      max-height: 90vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      animation: rk-slide-up 0.25s ease-out;
+    }
+
+    .settings-header {
+      padding: var(--rk-space-lg);
+      background: var(--rk-bg-card);
+      border-bottom: 1px solid var(--rk-border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .settings-header h2 {
+      margin: 0;
+      font-size: 1.1rem;
+      font-weight: 600;
+    }
+
+    .close-btn {
+      background: none;
+      border: none;
+      color: var(--rk-text-muted);
+      font-size: 1.5rem;
+      cursor: pointer;
+      padding: 0;
+      line-height: 1;
+    }
+
+    .close-btn:hover {
+      color: var(--rk-text-primary);
+    }
+
+    .settings-body {
+      padding: var(--rk-space-lg);
+      overflow-y: auto;
+      flex: 1;
+    }
+
+    .settings-section {
+      margin-bottom: var(--rk-space-xl);
+    }
+
+    .settings-section:last-child {
+      margin-bottom: 0;
+    }
+
+    .settings-section h3 {
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--rk-accent);
+      margin: 0 0 var(--rk-space-md) 0;
+      padding-bottom: var(--rk-space-sm);
+      border-bottom: 1px solid var(--rk-border);
+    }
+
+    .setting-row {
+      display: grid;
+      grid-template-columns: 140px 1fr;
+      gap: var(--rk-space-md);
+      align-items: center;
+      margin-bottom: var(--rk-space-md);
+    }
+
+    .setting-row label {
+      font-size: 0.85rem;
+      color: var(--rk-text-secondary);
+    }
+
+    .setting-row input[type="text"],
+    .setting-row input[type="number"],
+    .setting-row select {
+      width: 100%;
+      font-family: var(--rk-font-ui);
+      font-size: 0.85rem;
+      background: var(--rk-bg-card);
+      border: 1px solid var(--rk-border);
+      color: var(--rk-text-primary);
+      padding: 0.5rem 0.75rem;
+      border-radius: var(--rk-radius);
+      outline: none;
+    }
+
+    .setting-row input:focus,
+    .setting-row select:focus {
+      border-color: var(--rk-accent);
+      box-shadow: 0 0 0 3px var(--rk-ring);
+    }
+
+    .setting-row .hint {
+      grid-column: 2;
+      font-size: 0.75rem;
+      color: var(--rk-text-muted);
+      margin-top: -0.5rem;
+    }
+
+    .setting-toggle {
+      display: flex;
+      align-items: center;
+      gap: var(--rk-space-sm);
+    }
+
+    .setting-toggle input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      accent-color: var(--rk-accent);
+    }
+
+    .settings-footer {
+      padding: var(--rk-space-md) var(--rk-space-lg);
+      background: var(--rk-bg-card);
+      border-top: 1px solid var(--rk-border);
+      display: flex;
+      justify-content: flex-end;
+      gap: var(--rk-space-sm);
+    }
+
+    .settings-footer button {
+      font-family: var(--rk-font-ui);
+      font-size: 0.85rem;
+      padding: 0.5rem 1rem;
+      border-radius: var(--rk-radius);
+      cursor: pointer;
+      transition: all var(--rk-transition);
+    }
+
+    .btn-secondary {
+      background: var(--rk-bg-interactive);
+      border: 1px solid var(--rk-border);
+      color: var(--rk-text-secondary);
+    }
+
+    .btn-secondary:hover {
+      border-color: var(--rk-accent);
+      color: var(--rk-text-primary);
+    }
+
+    .btn-primary {
+      background: var(--rk-accent);
+      border: 1px solid var(--rk-accent);
+      color: var(--rk-bg-primary);
+      font-weight: 600;
+    }
+
+    .btn-primary:hover {
+      background: var(--rk-accent-secondary);
+      border-color: var(--rk-accent-secondary);
+    }
+
+    .connection-test {
+      display: flex;
+      align-items: center;
+      gap: var(--rk-space-sm);
+      padding: var(--rk-space-sm) var(--rk-space-md);
+      background: var(--rk-bg-interactive);
+      border-radius: var(--rk-radius);
+      font-size: 0.8rem;
+    }
+
+    .connection-test.success {
+      background: rgba(34, 197, 94, 0.1);
+      color: var(--rk-success);
+    }
+
+    .connection-test.error {
+      background: rgba(239, 68, 68, 0.1);
+      color: var(--rk-error);
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .modules-grid {
+        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      }
+
+      .theme-controls label {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="rk-bg-grid"></div>
+  <div class="rk-bg-glow"></div>
+
+  <header>
+    <div class="rk-logo">Rubi<span>Kit</span></div>
+    <span class="rk-badge">v2.1</span>
+
+    <div class="header-controls">
+      <div class="theme-controls">
+        <label>Theme</label>
+        <select id="theme-select">
+          <option value="">Notum</option>
+          <option value="theme-inferno">Inferno</option>
+          <option value="theme-nixie">Nixie</option>
+          <option value="theme-dark">Terminal</option>
+          <option value="theme-light">Paper</option>
+          <option value="theme-monokai">Monokai</option>
+        </select>
+      </div>
+
+      <div class="theme-controls">
+        <label>Font</label>
+        <select id="font-select">
+          <option value="">Default</option>
+          <option value="font-sci-fi">Sci-Fi</option>
+          <option value="font-mono">Mono</option>
+          <option value="font-tech">Tech</option>
+          <option value="font-aldrich">Aldrich</option>
+          <option value="font-vt323">VT323</option>
+        </select>
+      </div>
+
+      <button class="settings-btn" id="settings-btn" title="Settings">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path d="M19.14 12.94c.04-.31.06-.63.06-.94 0-.31-.02-.63-.06-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/>
+        </svg>
+      </button>
+
+      <div class="status">
+        <div id="status-dot" class="rk-status-dot"></div>
+        <span id="status-text">Connecting...</span>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <h2 class="section-title">Modules</h2>
+    <div id="modules-container" class="modules-grid">
+      <!-- Modules will be rendered here -->
+    </div>
+  </main>
+
+  <footer>
+    <span>RubiKit Desktop v2.1</span>
+    <div>
+      <button class="settings-btn" onclick="document.getElementById('settings-modal').classList.add('open')" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">Settings</button>
+    </div>
+  </footer>
+
+  <!-- Settings Modal -->
+  <div id="settings-modal">
+    <div class="settings-panel">
+      <div class="settings-header">
+        <h2>RubiKit Settings</h2>
+        <button class="close-btn" onclick="document.getElementById('settings-modal').classList.remove('open')">&times;</button>
+      </div>
+      <div class="settings-body rk-scroll">
+        <div class="settings-section">
+          <h3>LLM Configuration</h3>
+          <div class="setting-row">
+            <label>LLM Enabled</label>
+            <div class="setting-toggle">
+              <input type="checkbox" id="setting-llm-enabled" checked>
+              <span>Enable AI assistant features</span>
+            </div>
+          </div>
+          <div class="setting-row">
+            <label>LMStudio URL</label>
+            <input type="text" id="setting-llm-endpoint" value="http://127.0.0.1:1234" placeholder="http://127.0.0.1:1234">
+          </div>
+          <div class="setting-row">
+            <span></span>
+            <span class="hint">LMStudio default: http://127.0.0.1:1234, Ollama: http://127.0.0.1:11434</span>
+          </div>
+          <div class="setting-row">
+            <label>Model</label>
+            <input type="text" id="setting-llm-model" value="local-model" placeholder="e.g., mistral-7b-instruct">
+          </div>
+          <div class="setting-row">
+            <label>Max Tokens</label>
+            <input type="number" id="setting-llm-max-tokens" value="2048" min="128" max="8192">
+          </div>
+          <div class="setting-row">
+            <label>Temperature</label>
+            <input type="number" id="setting-llm-temperature" value="0.7" min="0" max="2" step="0.1">
+          </div>
+          <div class="setting-row">
+            <label>Connection</label>
+            <div id="llm-connection-test" class="connection-test">
+              <span class="rk-status-dot" id="llm-test-dot"></span>
+              <span id="llm-test-text">Not tested</span>
+              <button class="btn-secondary" onclick="testLLMConnection()" style="margin-left: auto; padding: 0.25rem 0.5rem; font-size: 0.75rem;">Test</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <h3>RubiKit API</h3>
+          <div class="setting-row">
+            <label>API Port</label>
+            <input type="number" id="setting-api-port" value="8777" min="1" max="65535">
+          </div>
+          <div class="setting-row">
+            <span></span>
+            <span class="hint">Port used by RubiKit C# backend for game data</span>
+          </div>
+          <div class="setting-row">
+            <label>Connection</label>
+            <div id="api-connection-test" class="connection-test">
+              <span class="rk-status-dot" id="api-test-dot"></span>
+              <span id="api-test-text">Not tested</span>
+              <button class="btn-secondary" onclick="testAPIConnection()" style="margin-left: auto; padding: 0.25rem 0.5rem; font-size: 0.75rem;">Test</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="settings-footer">
+        <button class="btn-secondary" onclick="resetSettings()">Reset Defaults</button>
+        <button class="btn-primary" onclick="saveSettings()">Save Settings</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ===== Configuration =====
+    let API_BASE = 'http://127.0.0.1:8777';
+
+    // ===== Module Definitions (from unified-os-tools/modules.json) =====
+    const MODULES = [
+      {
+        id: 'hydra',
+        name: 'Hydra',
+        iconClass: 'icon-hydra',
+        iconSrc: 'unified-os-tools/icons/hydra.svg',
+        description: 'Multi-headed observer for game monitoring',
+        path: 'unified-os-tools/Hydra.html',
+        persistent: true
+      },
+      {
+        id: 'xanalytics',
+        name: 'Xanalytics',
+        iconClass: 'icon-xanalytics',
+        iconSrc: 'unified-os-tools/icons/xanalytics.svg',
+        description: 'Live analytics dashboard',
+        path: 'unified-os-tools/Xanalytics/index.html',
+        persistent: false
+      },
+      {
+        id: 'notum-vision',
+        name: 'NotumVision',
+        iconClass: 'icon-notumvision',
+        iconSrc: 'unified-os-tools/icons/notumvision.svg',
+        description: 'Advanced HUD with proximity guard',
+        path: 'unified-os-tools/NotumVision/UI/index.html',
+        persistent: true
+      },
+      {
+        id: 'shop-maker',
+        name: 'ShopMaker',
+        iconClass: 'icon-shopmaker',
+        iconSrc: 'unified-os-tools/icons/shopmaker.svg',
+        description: 'AO shop window builder',
+        path: 'unified-os-tools/ShopMaker/ao_shop_builder.html',
+        persistent: false
+      },
+      {
+        id: 'notum-hud',
+        name: 'NotumHUD',
+        iconClass: 'icon-notumhud',
+        iconSrc: 'unified-os-tools/icons/notumhud.svg',
+        description: 'Original stats HUD',
+        path: 'bin/x86/Release/modules/notumhud/index.html',
+        persistent: true
+      },
+      {
+        id: 'map-viewer',
+        name: 'MapViewer',
+        iconClass: 'icon-mapviewer',
+        iconSrc: 'unified-os-tools/icons/mapviewer.svg',
+        description: 'Interactive map with waypoints',
+        path: 'unified-os-tools/MapViewer/index.html',
+        persistent: false
+      }
+    ];
+
+    // ===== Theme Management =====
+    const themeSelect = document.getElementById('theme-select');
+    const fontSelect = document.getElementById('font-select');
+
+    function loadPreferences() {
+      const theme = localStorage.getItem('rk-theme') || '';
+      const font = localStorage.getItem('rk-font') || '';
+
+      if (theme) {
+        document.body.classList.add(theme);
+        themeSelect.value = theme;
+      }
+      if (font) {
+        document.body.classList.add(font);
+        fontSelect.value = font;
+      }
+    }
+
+    function setTheme(theme) {
+      document.body.classList.remove('theme-inferno', 'theme-nixie', 'theme-dark', 'theme-light', 'theme-monokai');
+      if (theme) {
+        document.body.classList.add(theme);
+      }
+      localStorage.setItem('rk-theme', theme);
+    }
+
+    function setFont(font) {
+      document.body.classList.remove('font-sci-fi', 'font-mono', 'font-tech', 'font-aldrich', 'font-vt323');
+      if (font) {
+        document.body.classList.add(font);
+      }
+      localStorage.setItem('rk-font', font);
+    }
+
+    themeSelect.addEventListener('change', (e) => setTheme(e.target.value));
+    fontSelect.addEventListener('change', (e) => setFont(e.target.value));
+
+    // ===== Module Rendering =====
+    function renderModules() {
+      const container = document.getElementById('modules-container');
+      container.innerHTML = MODULES.map(m => `
+        <a href="${m.path}" class="module-card" data-module="${m.id}">
+          <div class="module-icon ${m.iconClass}">
+            <img src="${m.iconSrc}" alt="${m.name}">
+          </div>
+          <div class="module-name">${m.name}</div>
+          <div class="module-desc">${m.description}</div>
+          <span class="module-tag ${m.persistent ? 'persistent' : ''}">${m.persistent ? 'Persistent' : 'Tool'}</span>
+        </a>
+      `).join('');
+    }
+
+    // ===== API Status Check =====
+    async function checkStatus() {
+      const dot = document.getElementById('status-dot');
+      const text = document.getElementById('status-text');
+
+      try {
+        const res = await fetch(`${API_BASE}/health`, { mode: 'cors' });
+        if (res.ok) {
+          dot.classList.add('ok');
+          text.textContent = 'Connected';
+        } else {
+          throw new Error('API error');
+        }
+      } catch (e) {
+        dot.classList.remove('ok');
+        dot.classList.add('error');
+        text.textContent = 'Disconnected';
+      }
+    }
+
+    // ===== Settings Management =====
+    const DEFAULT_SETTINGS = {
+      llmEnabled: true,
+      llmEndpoint: 'http://127.0.0.1:1234',
+      llmModel: 'local-model',
+      llmMaxTokens: 2048,
+      llmTemperature: 0.7,
+      apiPort: 8777
+    };
+
+    function loadSettings() {
+      const saved = localStorage.getItem('rk-settings');
+      const settings = saved ? { ...DEFAULT_SETTINGS, ...JSON.parse(saved) } : DEFAULT_SETTINGS;
+
+      document.getElementById('setting-llm-enabled').checked = settings.llmEnabled;
+      document.getElementById('setting-llm-endpoint').value = settings.llmEndpoint;
+      document.getElementById('setting-llm-model').value = settings.llmModel;
+      document.getElementById('setting-llm-max-tokens').value = settings.llmMaxTokens;
+      document.getElementById('setting-llm-temperature').value = settings.llmTemperature;
+      document.getElementById('setting-api-port').value = settings.apiPort;
+
+      API_BASE = `http://127.0.0.1:${settings.apiPort}`;
+
+      return settings;
+    }
+
+    function saveSettings() {
+      const settings = {
+        llmEnabled: document.getElementById('setting-llm-enabled').checked,
+        llmEndpoint: document.getElementById('setting-llm-endpoint').value,
+        llmModel: document.getElementById('setting-llm-model').value,
+        llmMaxTokens: parseInt(document.getElementById('setting-llm-max-tokens').value),
+        llmTemperature: parseFloat(document.getElementById('setting-llm-temperature').value),
+        apiPort: parseInt(document.getElementById('setting-api-port').value)
+      };
+
+      localStorage.setItem('rk-settings', JSON.stringify(settings));
+      API_BASE = `http://127.0.0.1:${settings.apiPort}`;
+
+      document.getElementById('settings-modal').classList.remove('open');
+      alert('Settings saved!');
+    }
+
+    function resetSettings() {
+      if (confirm('Reset all settings to defaults?')) {
+        localStorage.removeItem('rk-settings');
+        loadSettings();
+      }
+    }
+
+    async function testLLMConnection() {
+      const endpoint = document.getElementById('setting-llm-endpoint').value;
+      const dot = document.getElementById('llm-test-dot');
+      const text = document.getElementById('llm-test-text');
+      const container = document.getElementById('llm-connection-test');
+
+      text.textContent = 'Testing...';
+      container.className = 'connection-test';
+
+      try {
+        const res = await fetch(`${endpoint}/v1/models`, {
+          method: 'GET',
+          mode: 'cors',
+          signal: AbortSignal.timeout(5000)
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          const modelCount = data.data?.length || 0;
+          dot.classList.add('ok');
+          text.textContent = `Connected (${modelCount} models)`;
+          container.className = 'connection-test success';
+        } else {
+          throw new Error('Invalid response');
+        }
+      } catch (e) {
+        dot.classList.remove('ok');
+        dot.classList.add('error');
+        text.textContent = 'Connection failed';
+        container.className = 'connection-test error';
+      }
+    }
+
+    async function testAPIConnection() {
+      const port = document.getElementById('setting-api-port').value;
+      const dot = document.getElementById('api-test-dot');
+      const text = document.getElementById('api-test-text');
+      const container = document.getElementById('api-connection-test');
+
+      text.textContent = 'Testing...';
+      container.className = 'connection-test';
+
+      try {
+        const res = await fetch(`http://127.0.0.1:${port}/health`, {
+          mode: 'cors',
+          signal: AbortSignal.timeout(5000)
+        });
+
+        if (res.ok) {
+          dot.classList.add('ok');
+          text.textContent = 'Connected';
+          container.className = 'connection-test success';
+        } else {
+          throw new Error('Invalid response');
+        }
+      } catch (e) {
+        dot.classList.remove('ok');
+        dot.classList.add('error');
+        text.textContent = 'Not running';
+        container.className = 'connection-test error';
+      }
+    }
+
+    // Settings modal keyboard handling
+    document.getElementById('settings-modal').addEventListener('click', (e) => {
+      if (e.target.id === 'settings-modal') {
+        e.target.classList.remove('open');
+      }
+    });
+
+    document.getElementById('settings-btn').addEventListener('click', () => {
+      document.getElementById('settings-modal').classList.add('open');
+    });
+
+    // ===== Initialize =====
+    document.addEventListener('DOMContentLoaded', () => {
+      loadPreferences();
+      loadSettings();
+      renderModules();
+      checkStatus();
+      setInterval(checkStatus, 30000);
+    });
+  </script>
+</body>
+</html>
