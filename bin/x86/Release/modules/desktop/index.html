@@ -420,6 +420,227 @@
         bottom: 80px;
       }
     }
+
+    /* ===== Settings Modal ===== */
+    .settings-btn {
+      background: var(--rk-bg-card);
+      border: 1px solid var(--rk-border);
+      color: var(--rk-text-secondary);
+      padding: 0.5rem;
+      border-radius: var(--rk-radius);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all var(--rk-transition);
+    }
+
+    .settings-btn:hover {
+      border-color: var(--rk-accent);
+      color: var(--rk-accent);
+    }
+
+    .settings-btn svg {
+      width: 20px;
+      height: 20px;
+      fill: currentColor;
+    }
+
+    #settings-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 200;
+      background: rgba(0,0,0,0.7);
+      backdrop-filter: blur(4px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: var(--rk-space-lg);
+    }
+
+    #settings-modal.open {
+      display: flex;
+    }
+
+    .settings-panel {
+      background: var(--rk-bg-secondary);
+      border: 1px solid var(--rk-border);
+      border-radius: var(--rk-radius-lg);
+      width: 100%;
+      max-width: 600px;
+      max-height: 90vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      animation: rk-slide-up 0.25s ease-out;
+    }
+
+    .settings-header {
+      padding: var(--rk-space-lg);
+      background: var(--rk-bg-card);
+      border-bottom: 1px solid var(--rk-border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .settings-header h2 {
+      margin: 0;
+      font-size: 1.1rem;
+      font-weight: 600;
+    }
+
+    .close-btn {
+      background: none;
+      border: none;
+      color: var(--rk-text-muted);
+      font-size: 1.5rem;
+      cursor: pointer;
+      padding: 0;
+      line-height: 1;
+    }
+
+    .close-btn:hover {
+      color: var(--rk-text-primary);
+    }
+
+    .settings-body {
+      padding: var(--rk-space-lg);
+      overflow-y: auto;
+      flex: 1;
+    }
+
+    .settings-section {
+      margin-bottom: var(--rk-space-xl);
+    }
+
+    .settings-section:last-child {
+      margin-bottom: 0;
+    }
+
+    .settings-section h3 {
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--rk-accent);
+      margin: 0 0 var(--rk-space-md) 0;
+      padding-bottom: var(--rk-space-sm);
+      border-bottom: 1px solid var(--rk-border);
+    }
+
+    .setting-row {
+      display: grid;
+      grid-template-columns: 140px 1fr;
+      gap: var(--rk-space-md);
+      align-items: center;
+      margin-bottom: var(--rk-space-md);
+    }
+
+    .setting-row label {
+      font-size: 0.85rem;
+      color: var(--rk-text-secondary);
+    }
+
+    .setting-row input[type="text"],
+    .setting-row input[type="number"],
+    .setting-row select {
+      width: 100%;
+      font-family: var(--rk-font-ui);
+      font-size: 0.85rem;
+      background: var(--rk-bg-card);
+      border: 1px solid var(--rk-border);
+      color: var(--rk-text-primary);
+      padding: 0.5rem 0.75rem;
+      border-radius: var(--rk-radius);
+      outline: none;
+    }
+
+    .setting-row input:focus,
+    .setting-row select:focus {
+      border-color: var(--rk-accent);
+      box-shadow: 0 0 0 3px var(--rk-ring);
+    }
+
+    .setting-row .hint {
+      grid-column: 2;
+      font-size: 0.75rem;
+      color: var(--rk-text-muted);
+      margin-top: -0.5rem;
+    }
+
+    .setting-toggle {
+      display: flex;
+      align-items: center;
+      gap: var(--rk-space-sm);
+    }
+
+    .setting-toggle input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      accent-color: var(--rk-accent);
+    }
+
+    .settings-footer {
+      padding: var(--rk-space-md) var(--rk-space-lg);
+      background: var(--rk-bg-card);
+      border-top: 1px solid var(--rk-border);
+      display: flex;
+      justify-content: flex-end;
+      gap: var(--rk-space-sm);
+    }
+
+    .settings-footer button {
+      font-family: var(--rk-font-ui);
+      font-size: 0.85rem;
+      padding: 0.5rem 1rem;
+      border-radius: var(--rk-radius);
+      cursor: pointer;
+      transition: all var(--rk-transition);
+    }
+
+    .btn-secondary {
+      background: var(--rk-bg-interactive);
+      border: 1px solid var(--rk-border);
+      color: var(--rk-text-secondary);
+    }
+
+    .btn-secondary:hover {
+      border-color: var(--rk-accent);
+      color: var(--rk-text-primary);
+    }
+
+    .btn-primary {
+      background: var(--rk-accent);
+      border: 1px solid var(--rk-accent);
+      color: var(--rk-bg-primary);
+      font-weight: 600;
+    }
+
+    .btn-primary:hover {
+      background: var(--rk-accent-secondary);
+      border-color: var(--rk-accent-secondary);
+    }
+
+    .connection-test {
+      display: flex;
+      align-items: center;
+      gap: var(--rk-space-sm);
+      padding: var(--rk-space-sm) var(--rk-space-md);
+      background: var(--rk-bg-interactive);
+      border-radius: var(--rk-radius);
+      font-size: 0.8rem;
+    }
+
+    .connection-test.success {
+      background: rgba(34, 197, 94, 0.1);
+      color: var(--rk-success);
+    }
+
+    .connection-test.error {
+      background: rgba(239, 68, 68, 0.1);
+      color: var(--rk-error);
+    }
   </style>
 </head>
 <body>
@@ -455,6 +676,12 @@
         </select>
       </div>
 
+      <button class="settings-btn" id="settings-btn" title="Settings">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path d="M19.14 12.94c.04-.31.06-.63.06-.94 0-.31-.02-.63-.06-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/>
+        </svg>
+      </button>
+
       <div class="status">
         <div id="status-dot" class="rk-status-dot"></div>
         <span id="status-text">Connecting...</span>
@@ -470,13 +697,107 @@
   </main>
 
   <footer>
-    <span>RubiKit Desktop</span>
+    <span>RubiKit Desktop v2.1</span>
     <div>
-      <a href="/api/modules">API</a> &middot;
-      <a href="/api/llm/status">LLM Status</a> &middot;
-      <a href="/api/endpoints">Endpoints</a>
+      <button class="settings-btn" onclick="document.getElementById('settings-modal').classList.add('open')" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">Settings</button>
     </div>
   </footer>
+
+  <!-- Settings Modal -->
+  <div id="settings-modal">
+    <div class="settings-panel">
+      <div class="settings-header">
+        <h2>RubiKit Settings</h2>
+        <button class="close-btn" onclick="document.getElementById('settings-modal').classList.remove('open')">&times;</button>
+      </div>
+      <div class="settings-body rk-scroll">
+        <div class="settings-section">
+          <h3>LLM Configuration</h3>
+          <div class="setting-row">
+            <label>LLM Enabled</label>
+            <div class="setting-toggle">
+              <input type="checkbox" id="setting-llm-enabled" checked>
+              <span>Enable AI assistant features</span>
+            </div>
+          </div>
+          <div class="setting-row">
+            <label>LMStudio URL</label>
+            <input type="text" id="setting-llm-endpoint" value="http://127.0.0.1:1234" placeholder="http://127.0.0.1:1234">
+          </div>
+          <div class="setting-row">
+            <span></span>
+            <span class="hint">LMStudio default: http://127.0.0.1:1234, Ollama: http://127.0.0.1:11434</span>
+          </div>
+          <div class="setting-row">
+            <label>Model</label>
+            <input type="text" id="setting-llm-model" value="local-model" placeholder="e.g., mistral-7b-instruct">
+          </div>
+          <div class="setting-row">
+            <label>Max Tokens</label>
+            <input type="number" id="setting-llm-max-tokens" value="2048" min="128" max="8192">
+          </div>
+          <div class="setting-row">
+            <label>Temperature</label>
+            <input type="number" id="setting-llm-temperature" value="0.7" min="0" max="2" step="0.1">
+          </div>
+          <div class="setting-row">
+            <label>Connection</label>
+            <div id="llm-connection-test" class="connection-test">
+              <span class="rk-status-dot" id="llm-test-dot"></span>
+              <span id="llm-test-text">Not tested</span>
+              <button class="btn-secondary" onclick="testLLMConnection()" style="margin-left: auto; padding: 0.25rem 0.5rem; font-size: 0.75rem;">Test</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <h3>RubiKit API</h3>
+          <div class="setting-row">
+            <label>API Port</label>
+            <input type="number" id="setting-api-port" value="8777" min="1" max="65535">
+          </div>
+          <div class="setting-row">
+            <span></span>
+            <span class="hint">Port used by RubiKit C# backend for game data</span>
+          </div>
+          <div class="setting-row">
+            <label>Connection</label>
+            <div id="api-connection-test" class="connection-test">
+              <span class="rk-status-dot" id="api-test-dot"></span>
+              <span id="api-test-text">Not tested</span>
+              <button class="btn-secondary" onclick="testAPIConnection()" style="margin-left: auto; padding: 0.25rem 0.5rem; font-size: 0.75rem;">Test</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <h3>Assistant Behavior</h3>
+          <div class="setting-row">
+            <label>Include Context</label>
+            <div class="setting-toggle">
+              <input type="checkbox" id="setting-include-context" checked>
+              <span>Send game state with questions</span>
+            </div>
+          </div>
+          <div class="setting-row">
+            <label>Auto Callouts</label>
+            <div class="setting-toggle">
+              <input type="checkbox" id="setting-auto-callouts" checked>
+              <span>Show automatic tips and alerts</span>
+            </div>
+          </div>
+          <div class="setting-row">
+            <label>Throttle (ms)</label>
+            <input type="number" id="setting-throttle" value="2000" min="500" max="10000" step="500">
+          </div>
+        </div>
+      </div>
+      <div class="settings-footer">
+        <button class="btn-secondary" onclick="resetSettings()">Reset Defaults</button>
+        <button class="btn-primary" onclick="saveSettings()">Save Settings</button>
+      </div>
+    </div>
+  </div>
 
   <!-- Floating Assistant -->
   <button id="assistant-toggle" title="RubiKit Assistant">
@@ -513,6 +834,7 @@
     const API_BASE = `http://127.0.0.1:8777`;
 
     // ===== Module Definitions =====
+    // Using relative paths for file:// protocol compatibility
     const MODULES = [
       {
         id: 'notumhud',
@@ -520,7 +842,7 @@
         icon: '📊',
         iconClass: 'icon-notum',
         description: 'Real-time character stats, damage modifiers, and armor classes',
-        path: '/modules/notumhud/index.html',
+        path: '../notumhud/index.html',
         tag: 'Stats'
       },
       {
@@ -529,7 +851,7 @@
         icon: '🐉',
         iconClass: 'icon-hydra',
         description: 'Multi-character coordination, team synergy, and buff tracking',
-        path: '/modules/hydra/index.html',
+        path: '../hydra/index.html',
         tag: 'Team'
       },
       {
@@ -538,7 +860,7 @@
         icon: '📈',
         iconClass: 'icon-xanalytics',
         description: 'XP tracking, leveling projections, and progression analytics',
-        path: '/modules/xanalytics/index.html',
+        path: '../xanalytics/index.html',
         tag: 'Analytics'
       },
       {
@@ -547,7 +869,7 @@
         icon: '⚔️',
         iconClass: 'icon-combat',
         description: 'DPS analysis, combat logging, and damage breakdowns',
-        path: '/modules/combat/index.html',
+        path: '../combat/index.html',
         tag: 'Combat'
       },
       {
@@ -556,7 +878,7 @@
         icon: '🏪',
         iconClass: 'icon-trading',
         description: 'Market analysis, price tracking, and shop management',
-        path: '/modules/trading/index.html',
+        path: '../trading/index.html',
         tag: 'Trading'
       },
       {
@@ -565,7 +887,7 @@
         icon: '🔧',
         iconClass: 'icon-build',
         description: 'Implant calculator, skill planning, and equipment optimization',
-        path: '/modules/build/index.html',
+        path: '../build/index.html',
         tag: 'Builds'
       },
       {
@@ -574,7 +896,7 @@
         icon: '🤖',
         iconClass: 'icon-assistant',
         description: 'LLM-powered help, questions, calculations, and game knowledge',
-        path: '/modules/assistant/index.html',
+        path: '../assistant/index.html',
         tag: 'AI'
       }
     ];
@@ -738,9 +1060,167 @@
       if (e.key === 'Enter') sendMessage();
     });
 
+    // ===== Settings Management =====
+    const DEFAULT_SETTINGS = {
+      llmEnabled: true,
+      llmEndpoint: 'http://127.0.0.1:1234',
+      llmModel: 'local-model',
+      llmMaxTokens: 2048,
+      llmTemperature: 0.7,
+      apiPort: 8777,
+      includeContext: true,
+      autoCallouts: true,
+      throttle: 2000
+    };
+
+    function loadSettings() {
+      const saved = localStorage.getItem('rk-settings');
+      const settings = saved ? { ...DEFAULT_SETTINGS, ...JSON.parse(saved) } : DEFAULT_SETTINGS;
+
+      document.getElementById('setting-llm-enabled').checked = settings.llmEnabled;
+      document.getElementById('setting-llm-endpoint').value = settings.llmEndpoint;
+      document.getElementById('setting-llm-model').value = settings.llmModel;
+      document.getElementById('setting-llm-max-tokens').value = settings.llmMaxTokens;
+      document.getElementById('setting-llm-temperature').value = settings.llmTemperature;
+      document.getElementById('setting-api-port').value = settings.apiPort;
+      document.getElementById('setting-include-context').checked = settings.includeContext;
+      document.getElementById('setting-auto-callouts').checked = settings.autoCallouts;
+      document.getElementById('setting-throttle').value = settings.throttle;
+
+      // Update API_BASE with saved port
+      window.API_PORT = settings.apiPort;
+
+      return settings;
+    }
+
+    function saveSettings() {
+      const settings = {
+        llmEnabled: document.getElementById('setting-llm-enabled').checked,
+        llmEndpoint: document.getElementById('setting-llm-endpoint').value,
+        llmModel: document.getElementById('setting-llm-model').value,
+        llmMaxTokens: parseInt(document.getElementById('setting-llm-max-tokens').value),
+        llmTemperature: parseFloat(document.getElementById('setting-llm-temperature').value),
+        apiPort: parseInt(document.getElementById('setting-api-port').value),
+        includeContext: document.getElementById('setting-include-context').checked,
+        autoCallouts: document.getElementById('setting-auto-callouts').checked,
+        throttle: parseInt(document.getElementById('setting-throttle').value)
+      };
+
+      localStorage.setItem('rk-settings', JSON.stringify(settings));
+      window.API_PORT = settings.apiPort;
+
+      // Try to update backend config if connected
+      updateBackendConfig(settings);
+
+      document.getElementById('settings-modal').classList.remove('open');
+      alert('Settings saved! Some changes may require a page refresh.');
+    }
+
+    function resetSettings() {
+      if (confirm('Reset all settings to defaults?')) {
+        localStorage.removeItem('rk-settings');
+        loadSettings();
+      }
+    }
+
+    async function updateBackendConfig(settings) {
+      try {
+        const params = new URLSearchParams({
+          endpoint: settings.llmEndpoint,
+          model: settings.llmModel,
+          maxTokens: settings.llmMaxTokens,
+          temperature: settings.llmTemperature,
+          enabled: settings.llmEnabled,
+          throttleMs: settings.throttle
+        });
+        await fetch(`http://127.0.0.1:${settings.apiPort}/api/llm/config?${params}`, {
+          method: 'POST',
+          mode: 'cors'
+        });
+      } catch (e) {
+        // Backend not available, settings will be applied when it starts
+      }
+    }
+
+    async function testLLMConnection() {
+      const endpoint = document.getElementById('setting-llm-endpoint').value;
+      const dot = document.getElementById('llm-test-dot');
+      const text = document.getElementById('llm-test-text');
+      const container = document.getElementById('llm-connection-test');
+
+      text.textContent = 'Testing...';
+      container.className = 'connection-test';
+
+      try {
+        // Try to hit LMStudio/Ollama models endpoint
+        const res = await fetch(`${endpoint}/v1/models`, {
+          method: 'GET',
+          mode: 'cors',
+          signal: AbortSignal.timeout(5000)
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          const modelCount = data.data?.length || 0;
+          dot.classList.add('ok');
+          text.textContent = `Connected (${modelCount} models)`;
+          container.className = 'connection-test success';
+        } else {
+          throw new Error('Invalid response');
+        }
+      } catch (e) {
+        dot.classList.remove('ok');
+        dot.classList.add('error');
+        text.textContent = 'Connection failed';
+        container.className = 'connection-test error';
+      }
+    }
+
+    async function testAPIConnection() {
+      const port = document.getElementById('setting-api-port').value;
+      const dot = document.getElementById('api-test-dot');
+      const text = document.getElementById('api-test-text');
+      const container = document.getElementById('api-connection-test');
+
+      text.textContent = 'Testing...';
+      container.className = 'connection-test';
+
+      try {
+        const res = await fetch(`http://127.0.0.1:${port}/health`, {
+          mode: 'cors',
+          signal: AbortSignal.timeout(5000)
+        });
+
+        if (res.ok) {
+          dot.classList.add('ok');
+          text.textContent = 'Connected';
+          container.className = 'connection-test success';
+        } else {
+          throw new Error('Invalid response');
+        }
+      } catch (e) {
+        dot.classList.remove('ok');
+        dot.classList.add('error');
+        text.textContent = 'Not running';
+        container.className = 'connection-test error';
+      }
+    }
+
+    // Settings modal keyboard handling
+    document.getElementById('settings-modal').addEventListener('click', (e) => {
+      if (e.target.id === 'settings-modal') {
+        e.target.classList.remove('open');
+      }
+    });
+
+    document.getElementById('settings-btn').addEventListener('click', () => {
+      document.getElementById('settings-modal').classList.add('open');
+    });
+
     // ===== Initialize =====
     document.addEventListener('DOMContentLoaded', () => {
       loadPreferences();
+      loadSettings();
       renderModules();
       checkStatus();
       checkLLMStatus();
