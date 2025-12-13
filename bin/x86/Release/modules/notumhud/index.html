@@ -44,6 +44,7 @@
     <div id="app-background" aria-hidden="true"></div>
 
     <header class="topbar">
+      <a href="../desktop/index.html" class="back-to-desktop" title="Back to Desktop" style="color: var(--text-muted); text-decoration: none; font-size: 1.25rem; margin-right: 0.5rem;">&larr;</a>
       <div class="logo">
         <h1>NOTUM<b>HUD</b></h1>
       </div>
@@ -180,6 +181,84 @@
     <button id="api-panel-toggle" title="Toggle API Panel" aria-label="Toggle API and diagnostics panel">
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6.429 9.75L2.25 12l4.179 2.25m0-4.5l5.571 3 5.571-3m-11.142 0L12 15.25l5.571-5.5M6.429 9.75L12 6.5l5.571 3.25"></path></svg>
     </button>
-  </div> <script src="script.js"></script>
+  </div>
+
+  <!-- RubiKit Common (Floating Assistant) -->
+  <script src="../shared/rubikit-common.js"></script>
+  <script src="script.js"></script>
+  <script>
+    // Initialize floating assistant after NotumHUD loads
+    document.addEventListener('DOMContentLoaded', function() {
+      // Inject the assistant with a small delay to ensure NotumHUD is ready
+      setTimeout(function() {
+        if (typeof RubiKit !== 'undefined' && RubiKit.Assistant) {
+          RubiKit.Assistant.init();
+        }
+
+        // Sync theme with global RubiKit theme storage
+        const savedTheme = localStorage.getItem('rk-theme');
+        const savedFont = localStorage.getItem('rk-font');
+
+        // Map rk-theme values to NotumHUD theme values
+        const themeMap = {
+          'theme-inferno': 'theme-inferno',
+          'theme-nixie': 'theme-nixie',
+          'theme-dark': 'theme-dark',
+          'theme-light': 'theme-light',
+          'theme-monokai': 'theme-monokai',
+          '': 'theme-notum'
+        };
+
+        const fontMap = {
+          'font-sci-fi': 'font-sci-fi',
+          'font-mono': 'font-mono',
+          'font-tech': 'font-tech',
+          'font-aldrich': 'font-aldrich',
+          'font-vt323': 'font-vt323',
+          '': 'font-default'
+        };
+
+        // Apply saved theme if different from current
+        if (savedTheme !== null) {
+          const themeSelect = document.getElementById('theme');
+          const mappedTheme = themeMap[savedTheme] || 'theme-notum';
+          if (themeSelect && themeSelect.value !== mappedTheme) {
+            themeSelect.value = mappedTheme;
+            themeSelect.dispatchEvent(new Event('change'));
+          }
+        }
+
+        // Apply saved font
+        if (savedFont !== null) {
+          const fontSelect = document.getElementById('font');
+          const mappedFont = fontMap[savedFont] || 'font-default';
+          if (fontSelect && fontSelect.value !== mappedFont) {
+            fontSelect.value = mappedFont;
+            fontSelect.dispatchEvent(new Event('change'));
+          }
+        }
+
+        // Listen for theme changes and sync back to rk-theme
+        const themeSelect = document.getElementById('theme');
+        const fontSelect = document.getElementById('font');
+
+        if (themeSelect) {
+          themeSelect.addEventListener('change', function() {
+            const val = this.value;
+            const rkTheme = val === 'theme-notum' ? '' : val;
+            localStorage.setItem('rk-theme', rkTheme);
+          });
+        }
+
+        if (fontSelect) {
+          fontSelect.addEventListener('change', function() {
+            const val = this.value;
+            const rkFont = val === 'font-default' ? '' : val;
+            localStorage.setItem('rk-font', rkFont);
+          });
+        }
+      }, 100);
+    });
+  </script>
 </body>
 </html>

@@ -1,0 +1,526 @@
+/* ============================================== */
+/* RUBIKIT SHARED THEME SYSTEM                   */
+/* Unified theming across all RubiKit modules    */
+/* ============================================== */
+
+/* ----- Font Imports ----- */
+@import url('https://fonts.googleapis.com/css2?family=Aldrich&family=Exo+2:wght@400;600;700&family=Fira+Code&family=Orbitron:wght@700&family=Roboto+Mono&family=Roboto+Slab&family=Share+Tech+Mono&family=VT323&display=swap');
+
+/* ----- Core CSS Variables (Default: Notum Theme) ----- */
+:root {
+  /* Fonts */
+  --rk-font-ui: 'Exo 2', system-ui, -apple-system, sans-serif;
+  --rk-font-num: 'Orbitron', 'Exo 2', sans-serif;
+  --rk-font-code: 'Fira Code', monospace;
+  --rk-font-scale: 100%;
+
+  /* Backgrounds */
+  --rk-bg-primary: #040811;
+  --rk-bg-secondary: #0a1320;
+  --rk-bg-card: rgba(10, 19, 38, 0.6);
+  --rk-bg-card-hover: rgba(20, 35, 60, 0.7);
+  --rk-bg-grid: rgba(56, 189, 248, 0.07);
+  --rk-bg-interactive: rgba(56, 189, 248, 0.1);
+
+  /* Borders */
+  --rk-border: rgba(56, 189, 248, 0.2);
+  --rk-border-accent: rgba(56, 189, 248, 0.5);
+
+  /* Text */
+  --rk-text-primary: #E0FAFF;
+  --rk-text-secondary: #88C0D0;
+  --rk-text-muted: #4A5F7C;
+  --rk-text-glow: #38bdf8;
+  --rk-text-error: #f87171;
+
+  /* Accents */
+  --rk-accent: #38BDF8;
+  --rk-accent-secondary: #0077B6;
+  --rk-accent-glow: rgba(56, 189, 248, 0.3);
+  --rk-ring: rgba(56, 189, 248, 0.5);
+
+  /* Shadows */
+  --rk-glow-shadow: rgba(56, 189, 248, 0.1);
+  --rk-card-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+
+  /* Status colors */
+  --rk-success: #22c55e;
+  --rk-warning: #f59e0b;
+  --rk-error: #ef4444;
+  --rk-info: #38bdf8;
+
+  /* HP/Nano bars */
+  --rk-hp-primary: #F87171;
+  --rk-hp-secondary: #DC2626;
+  --rk-nano-primary: #38BDF8;
+  --rk-nano-secondary: #0EA5E9;
+
+  /* Log colors */
+  --rk-log-info: #93c5fd;
+  --rk-log-success: #6ee7b7;
+  --rk-log-warn: #f59e0b;
+  --rk-log-error: #f87171;
+  --rk-log-api: #c4b5fd;
+
+  /* Transitions */
+  --rk-transition-fast: 0.15s ease;
+  --rk-transition: 0.2s ease;
+  --rk-transition-slow: 0.35s ease;
+
+  /* Border radius */
+  --rk-radius-sm: 4px;
+  --rk-radius: 8px;
+  --rk-radius-lg: 12px;
+  --rk-radius-xl: 16px;
+
+  /* Spacing */
+  --rk-space-xs: 0.25rem;
+  --rk-space-sm: 0.5rem;
+  --rk-space-md: 1rem;
+  --rk-space-lg: 1.5rem;
+  --rk-space-xl: 2rem;
+}
+
+/* ----- THEME: Inferno ----- */
+.theme-inferno,
+body.theme-inferno {
+  --rk-bg-primary: #110404;
+  --rk-bg-secondary: #1a0808;
+  --rk-bg-card: rgba(42, 16, 16, 0.6);
+  --rk-bg-card-hover: rgba(60, 24, 24, 0.7);
+  --rk-bg-grid: rgba(249, 115, 22, 0.1);
+  --rk-bg-interactive: rgba(249, 115, 22, 0.1);
+  --rk-border: rgba(255, 75, 31, 0.2);
+  --rk-border-accent: rgba(255, 75, 31, 0.5);
+  --rk-text-primary: #ffe8d9;
+  --rk-text-secondary: #ffb193;
+  --rk-text-muted: #7f3d30;
+  --rk-text-glow: #f97316;
+  --rk-accent: #f97316;
+  --rk-accent-secondary: #dc2626;
+  --rk-accent-glow: rgba(249, 115, 22, 0.3);
+  --rk-ring: rgba(249, 115, 22, 0.5);
+  --rk-glow-shadow: rgba(255, 75, 31, 0.2);
+}
+
+/* ----- THEME: Nixie ----- */
+.theme-nixie,
+body.theme-nixie {
+  --rk-bg-primary: #0a0a0a;
+  --rk-bg-secondary: #141210;
+  --rk-bg-card: rgba(26, 20, 16, 0.7);
+  --rk-bg-card-hover: rgba(40, 32, 26, 0.8);
+  --rk-bg-grid: rgba(255, 138, 0, 0.1);
+  --rk-bg-interactive: rgba(255, 138, 0, 0.1);
+  --rk-border: rgba(255, 138, 0, 0.2);
+  --rk-border-accent: rgba(255, 138, 0, 0.5);
+  --rk-text-primary: #ffdcb8;
+  --rk-text-secondary: #b98757;
+  --rk-text-muted: #503f30;
+  --rk-text-glow: #ff8a00;
+  --rk-accent: #ff8a00;
+  --rk-accent-secondary: #e65100;
+  --rk-accent-glow: rgba(255, 138, 0, 0.3);
+  --rk-ring: rgba(255, 138, 0, 0.6);
+  --rk-glow-shadow: rgba(255, 138, 0, 0.25);
+}
+
+/* ----- THEME: Terminal (Dark) ----- */
+.theme-dark,
+body.theme-dark {
+  --rk-bg-primary: #0d1117;
+  --rk-bg-secondary: #161b22;
+  --rk-bg-card: rgba(22, 27, 34, 0.7);
+  --rk-bg-card-hover: rgba(33, 38, 45, 0.8);
+  --rk-bg-grid: rgba(139, 148, 158, 0.1);
+  --rk-bg-interactive: rgba(88, 166, 255, 0.1);
+  --rk-border: rgba(48, 54, 61, 0.7);
+  --rk-border-accent: #388bfd;
+  --rk-text-primary: #c9d1d9;
+  --rk-text-secondary: #8b949e;
+  --rk-text-muted: #484f58;
+  --rk-text-glow: #58a6ff;
+  --rk-accent: #58a6ff;
+  --rk-accent-secondary: #1f6feb;
+  --rk-accent-glow: rgba(88, 166, 255, 0.2);
+  --rk-ring: rgba(88, 166, 255, 0.4);
+  --rk-glow-shadow: rgba(88, 166, 255, 0.1);
+}
+
+/* ----- THEME: Paper (Light) ----- */
+.theme-light,
+body.theme-light {
+  --rk-bg-primary: #ffffff;
+  --rk-bg-secondary: #f6f8fa;
+  --rk-bg-card: rgba(246, 248, 250, 0.9);
+  --rk-bg-card-hover: rgba(234, 238, 242, 0.95);
+  --rk-bg-grid: rgba(208, 215, 222, 0.4);
+  --rk-bg-interactive: rgba(9, 105, 218, 0.1);
+  --rk-border: #d0d7de;
+  --rk-border-accent: #0969da;
+  --rk-text-primary: #24292f;
+  --rk-text-secondary: #57606a;
+  --rk-text-muted: #8c959f;
+  --rk-text-glow: #0969da;
+  --rk-accent: #0969da;
+  --rk-accent-secondary: #0550ae;
+  --rk-accent-glow: rgba(9, 105, 218, 0.15);
+  --rk-ring: rgba(9, 105, 218, 0.3);
+  --rk-glow-shadow: rgba(9, 105, 218, 0.1);
+  --rk-text-error: #cf222e;
+}
+
+/* ----- THEME: Monokai ----- */
+.theme-monokai,
+body.theme-monokai {
+  --rk-bg-primary: #272822;
+  --rk-bg-secondary: #2e2f28;
+  --rk-bg-card: rgba(46, 47, 40, 0.7);
+  --rk-bg-card-hover: rgba(60, 61, 54, 0.8);
+  --rk-bg-grid: rgba(166, 226, 46, 0.07);
+  --rk-bg-interactive: rgba(230, 219, 116, 0.1);
+  --rk-border: #49483e;
+  --rk-border-accent: #f92672;
+  --rk-text-primary: #f8f8f2;
+  --rk-text-secondary: #9a9a85;
+  --rk-text-muted: #75715e;
+  --rk-text-glow: #fd971f;
+  --rk-accent: #66d9ef;
+  --rk-accent-secondary: #a6e22e;
+  --rk-accent-glow: rgba(253, 151, 31, 0.2);
+  --rk-ring: rgba(230, 219, 116, 0.4);
+  --rk-glow-shadow: rgba(253, 151, 31, 0.15);
+}
+
+/* ----- Font Presets ----- */
+.font-default,
+body.font-default {
+  --rk-font-ui: 'Exo 2', sans-serif;
+  --rk-font-num: 'Orbitron', sans-serif;
+}
+
+.font-sci-fi,
+body.font-sci-fi {
+  --rk-font-ui: 'Exo 2', sans-serif;
+  --rk-font-num: 'Exo 2', sans-serif;
+}
+
+.font-serif,
+body.font-serif {
+  --rk-font-ui: 'Roboto Slab', serif;
+  --rk-font-num: 'Roboto Slab', serif;
+}
+
+.font-mono,
+body.font-mono {
+  --rk-font-ui: 'Fira Code', monospace;
+  --rk-font-num: 'Fira Code', monospace;
+}
+
+.font-tech,
+body.font-tech {
+  --rk-font-ui: 'Share Tech Mono', monospace;
+  --rk-font-num: 'Share Tech Mono', monospace;
+}
+
+.font-roboto-mono,
+body.font-roboto-mono {
+  --rk-font-ui: 'Roboto Mono', monospace;
+  --rk-font-num: 'Roboto Mono', monospace;
+}
+
+.font-aldrich,
+body.font-aldrich {
+  --rk-font-ui: 'Aldrich', sans-serif;
+  --rk-font-num: 'Aldrich', sans-serif;
+}
+
+.font-vt323,
+body.font-vt323 {
+  --rk-font-ui: 'VT323', monospace;
+  --rk-font-num: 'VT323', monospace;
+}
+
+/* ----- Base Styles ----- */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  font-size: var(--rk-font-scale);
+}
+
+body {
+  margin: 0;
+  font-family: var(--rk-font-ui);
+  font-weight: 400;
+  background-color: var(--rk-bg-primary);
+  color: var(--rk-text-primary);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  transition: background-color var(--rk-transition-slow), color var(--rk-transition-slow);
+}
+
+/* ----- Animated Background Grid ----- */
+.rk-bg-grid {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background-image:
+    linear-gradient(var(--rk-bg-grid) 1px, transparent 1px),
+    linear-gradient(to right, var(--rk-bg-grid) 1px, transparent 1px);
+  background-size: 35px 35px;
+  animation: rk-bg-pan 180s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes rk-bg-pan {
+  from { transform: translate(0, 0); }
+  to { transform: translate(-700px, 700px); }
+}
+
+/* ----- Radial Glow Background ----- */
+.rk-bg-glow {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background:
+    radial-gradient(ellipse at 20% 20%, var(--rk-accent-glow) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 80%, var(--rk-accent-glow) 0%, transparent 50%);
+  pointer-events: none;
+}
+
+/* ----- Card Component ----- */
+.rk-card {
+  background: var(--rk-bg-card);
+  border: 1px solid var(--rk-border);
+  border-radius: var(--rk-radius-lg);
+  padding: var(--rk-space-lg);
+  backdrop-filter: blur(12px);
+  box-shadow: var(--rk-card-shadow), inset 0 1px 0 rgba(255,255,255,0.02);
+  transition: all var(--rk-transition);
+}
+
+.rk-card:hover {
+  background: var(--rk-bg-card-hover);
+  border-color: var(--rk-border-accent);
+  box-shadow: var(--rk-card-shadow), 0 0 0 1px var(--rk-accent-glow);
+}
+
+.rk-card-clickable {
+  cursor: pointer;
+  text-decoration: none;
+  color: inherit;
+}
+
+.rk-card-clickable:hover {
+  transform: translateY(-2px);
+}
+
+/* ----- Panel Component ----- */
+.rk-panel {
+  background: var(--rk-bg-card);
+  border: 1px solid var(--rk-border);
+  backdrop-filter: blur(12px);
+  padding: var(--rk-space-md);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.02), 0 0 40px var(--rk-glow-shadow);
+  clip-path: polygon(0 10px, 10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%);
+}
+
+/* ----- Button Component ----- */
+.rk-btn {
+  font-family: var(--rk-font-ui);
+  font-size: 0.875rem;
+  font-weight: 600;
+  background: var(--rk-bg-interactive);
+  border: 1px solid var(--rk-border);
+  color: var(--rk-text-secondary);
+  padding: var(--rk-space-sm) var(--rk-space-md);
+  border-radius: var(--rk-radius);
+  cursor: pointer;
+  transition: all var(--rk-transition);
+}
+
+.rk-btn:hover {
+  background: var(--rk-accent-glow);
+  border-color: var(--rk-accent);
+  color: var(--rk-text-primary);
+}
+
+.rk-btn-primary {
+  background: var(--rk-accent);
+  border-color: var(--rk-accent);
+  color: var(--rk-bg-primary);
+}
+
+.rk-btn-primary:hover {
+  background: var(--rk-accent-secondary);
+  border-color: var(--rk-accent-secondary);
+}
+
+/* ----- Input Component ----- */
+.rk-input {
+  font-family: var(--rk-font-ui);
+  font-size: 0.875rem;
+  background: rgba(0,0,0,0.3);
+  border: 1px solid var(--rk-border);
+  color: var(--rk-text-primary);
+  padding: var(--rk-space-sm) var(--rk-space-md);
+  border-radius: var(--rk-radius);
+  outline: none;
+  transition: all var(--rk-transition);
+}
+
+.rk-input:focus {
+  border-color: var(--rk-accent);
+  box-shadow: 0 0 0 3px var(--rk-ring);
+}
+
+.rk-input::placeholder {
+  color: var(--rk-text-muted);
+}
+
+/* ----- Status Indicator ----- */
+.rk-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--rk-warning);
+  box-shadow: 0 0 8px var(--rk-warning);
+  animation: rk-pulse 2s infinite;
+}
+
+.rk-status-dot.ok {
+  background: var(--rk-success);
+  box-shadow: 0 0 8px var(--rk-success);
+}
+
+.rk-status-dot.error {
+  background: var(--rk-error);
+  box-shadow: 0 0 8px var(--rk-error);
+}
+
+@keyframes rk-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* ----- Title/Header Styles ----- */
+.rk-title {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--rk-accent);
+  margin: 0 0 var(--rk-space-md) 0;
+  padding-bottom: var(--rk-space-sm);
+  border-bottom: 1px solid var(--rk-border);
+  text-shadow: 0 0 5px var(--rk-text-glow);
+}
+
+.rk-logo {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--rk-accent);
+  letter-spacing: -0.5px;
+}
+
+.rk-logo span {
+  color: var(--rk-text-primary);
+  font-weight: 400;
+}
+
+/* ----- Scrollbar Styling ----- */
+.rk-scroll::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.rk-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.rk-scroll::-webkit-scrollbar-thumb {
+  background-color: var(--rk-text-muted);
+  border-radius: 6px;
+}
+
+.rk-scroll::-webkit-scrollbar-thumb:hover {
+  background-color: var(--rk-text-secondary);
+}
+
+/* ----- Animations ----- */
+@keyframes rk-fade-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes rk-slide-up {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes rk-spin {
+  to { transform: rotate(360deg); }
+}
+
+.rk-animate-fade {
+  animation: rk-fade-in 0.3s ease-out;
+}
+
+.rk-animate-slide {
+  animation: rk-slide-up 0.4s ease-out;
+}
+
+/* ----- Spinner ----- */
+.rk-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--rk-border);
+  border-top-color: var(--rk-accent);
+  border-radius: 50%;
+  animation: rk-spin 1s linear infinite;
+}
+
+/* ----- Utility Classes ----- */
+.rk-text-accent { color: var(--rk-accent); }
+.rk-text-muted { color: var(--rk-text-muted); }
+.rk-text-secondary { color: var(--rk-text-secondary); }
+.rk-text-success { color: var(--rk-success); }
+.rk-text-warning { color: var(--rk-warning); }
+.rk-text-error { color: var(--rk-error); }
+
+.rk-font-num { font-family: var(--rk-font-num); }
+.rk-font-code { font-family: var(--rk-font-code); }
+
+.rk-glow { text-shadow: 0 0 8px var(--rk-text-glow); }
+
+/* ----- Module Icon Component ----- */
+.rk-module-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: var(--rk-radius-lg);
+  background: linear-gradient(135deg, var(--rk-accent) 0%, var(--rk-accent-secondary) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  box-shadow: 0 4px 16px var(--rk-accent-glow);
+  transition: transform var(--rk-transition), box-shadow var(--rk-transition);
+}
+
+.rk-card:hover .rk-module-icon {
+  transform: scale(1.05);
+  box-shadow: 0 6px 24px var(--rk-accent-glow);
+}
+
+/* ----- Version Badge ----- */
+.rk-badge {
+  font-size: 0.75rem;
+  color: var(--rk-text-secondary);
+  background: var(--rk-bg-card);
+  padding: var(--rk-space-xs) var(--rk-space-sm);
+  border-radius: var(--rk-radius-xl);
+}

@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Assistant - RubiKit</title>
+  <link rel="stylesheet" href="../shared/rubikit-theme.css">
+  <style>
+    body { min-height: 100vh; display: flex; flex-direction: column; }
+
+    header {
+      padding: var(--rk-space-md) var(--rk-space-xl);
+      background: var(--rk-bg-secondary);
+      border-bottom: 1px solid var(--rk-border);
+      display: flex;
+      align-items: center;
+      gap: var(--rk-space-md);
+    }
+
+    .back-link { color: var(--rk-text-muted); text-decoration: none; font-size: 1.25rem; }
+    .back-link:hover { color: var(--rk-accent); }
+
+    .module-title { display: flex; align-items: center; gap: var(--rk-space-sm); }
+    .module-title h1 { font-size: 1.25rem; font-weight: 600; margin: 0; }
+
+    .header-controls { margin-left: auto; display: flex; align-items: center; gap: var(--rk-space-md); }
+
+    .llm-info {
+      display: flex;
+      align-items: center;
+      gap: var(--rk-space-md);
+      font-size: 0.8rem;
+    }
+
+    .llm-model {
+      padding: 0.25rem 0.75rem;
+      background: var(--rk-bg-card);
+      border: 1px solid var(--rk-border);
+      border-radius: var(--rk-radius-xl);
+      color: var(--rk-text-secondary);
+    }
+
+    .status { display: flex; align-items: center; gap: var(--rk-space-sm); font-size: 0.8rem; color: var(--rk-text-secondary); }
+
+    main {
+      flex: 1;
+      display: flex;
+      max-width: 1200px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    /* Chat Layout */
+    .chat-container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      border-right: 1px solid var(--rk-border);
+    }
+
+    .chat-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: var(--rk-space-xl);
+      display: flex;
+      flex-direction: column;
+      gap: var(--rk-space-md);
+    }
+
+    .message {
+      max-width: 80%;
+      animation: rk-fade-in 0.3s ease-out;
+    }
+
+    .message.user {
+      align-self: flex-end;
+    }
+
+    .message.assistant {
+      align-self: flex-start;
+    }
+
+    .message-content {
+      padding: var(--rk-space-md) var(--rk-space-lg);
+      border-radius: var(--rk-radius-lg);
+      font-size: 0.95rem;
+      line-height: 1.6;
+    }
+
+    .message.user .message-content {
+      background: var(--rk-accent);
+      color: var(--rk-bg-primary);
+      border-bottom-right-radius: 4px;
+    }
+
+    .message.assistant .message-content {
+      background: var(--rk-bg-card);
+      border: 1px solid var(--rk-border);
+      color: var(--rk-text-primary);
+      border-bottom-left-radius: 4px;
+    }
+
+    .message-meta {
+      font-size: 0.7rem;
+      color: var(--rk-text-muted);
+      margin-top: var(--rk-space-xs);
+      padding: 0 var(--rk-space-sm);
+    }
+
+    .message.user .message-meta {
+      text-align: right;
+    }
+
+    /* Welcome message */
+    .welcome {
+      text-align: center;
+      padding: var(--rk-space-xl);
+      color: var(--rk-text-muted);
+    }
+
+    .welcome-icon {
+      font-size: 4rem;
+      margin-bottom: var(--rk-space-md);
+      opacity: 0.5;
+    }
+
+    .welcome h2 {
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: var(--rk-text-primary);
+      margin-bottom: var(--rk-space-sm);
+    }
+
+    .welcome p {
+      max-width: 500px;
+      margin: 0 auto var(--rk-space-lg);
+    }
+
+    /* Suggestions */
+    .suggestions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--rk-space-sm);
+      justify-content: center;
+    }
+
+    .suggestion {
+      padding: var(--rk-space-sm) var(--rk-space-md);
+      background: var(--rk-bg-card);
+      border: 1px solid var(--rk-border);
+      border-radius: var(--rk-radius-xl);
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: all var(--rk-transition);
+    }
+
+    .suggestion:hover {
+      background: var(--rk-accent-glow);
+      border-color: var(--rk-accent);
+      color: var(--rk-text-primary);
+    }
+
+    /* Input Area */
+    .chat-input-area {
+      padding: var(--rk-space-lg);
+      background: var(--rk-bg-secondary);
+      border-top: 1px solid var(--rk-border);
+    }
+
+    .input-wrapper {
+      display: flex;
+      gap: var(--rk-space-sm);
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    .chat-textarea {
+      flex: 1;
+      font-family: var(--rk-font-ui);
+      font-size: 0.95rem;
+      background: var(--rk-bg-card);
+      border: 1px solid var(--rk-border);
+      color: var(--rk-text-primary);
+      padding: var(--rk-space-md);
+      border-radius: var(--rk-radius-lg);
+      resize: none;
+      min-height: 52px;
+      max-height: 150px;
+      outline: none;
+      transition: all var(--rk-transition);
+    }
+
+    .chat-textarea:focus {
+      border-color: var(--rk-accent);
+      box-shadow: 0 0 0 3px var(--rk-ring);
+    }
+
+    .chat-textarea::placeholder {
+      color: var(--rk-text-muted);
+    }
+
+    .send-btn {
+      width: 52px;
+      height: 52px;
+      background: var(--rk-accent);
+      border: none;
+      border-radius: var(--rk-radius-lg);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all var(--rk-transition);
+    }
+
+    .send-btn:hover {
+      background: var(--rk-accent-secondary);
+      transform: scale(1.05);
+    }
+
+    .send-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .send-btn svg {
+      width: 24px;
+      height: 24px;
+      fill: white;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      width: 320px;
+      background: var(--rk-bg-secondary);
+      display: flex;
+      flex-direction: column;
+    }
+
+    @media (max-width: 900px) {
+      .sidebar { display: none; }
+    }
+
+    .sidebar-section {
+      padding: var(--rk-space-md);
+      border-bottom: 1px solid var(--rk-border);
+    }
+
+    .sidebar-title {
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--rk-accent);
+      margin-bottom: var(--rk-space-md);
+    }
+
+    /* Context Panel */
+    .context-item {
+      display: flex;
+      justify-content: space-between;
+      padding: var(--rk-space-sm);
+      background: var(--rk-bg-card);
+      border-radius: var(--rk-radius);
+      margin-bottom: var(--rk-space-sm);
+      font-size: 0.85rem;
+    }
+
+    .context-label { color: var(--rk-text-muted); }
+    .context-value { font-family: var(--rk-font-num); }
+
+    /* Capabilities */
+    .capability-list {
+      display: flex;
+      flex-direction: column;
+      gap: var(--rk-space-sm);
+    }
+
+    .capability {
+      display: flex;
+      align-items: flex-start;
+      gap: var(--rk-space-sm);
+      font-size: 0.85rem;
+      color: var(--rk-text-secondary);
+    }
+
+    .capability-icon {
+      color: var(--rk-accent);
+    }
+
+    /* History */
+    .history-list {
+      display: flex;
+      flex-direction: column;
+      gap: var(--rk-space-xs);
+      max-height: 200px;
+      overflow-y: auto;
+    }
+
+    .history-item {
+      padding: var(--rk-space-sm);
+      background: var(--rk-bg-card);
+      border-radius: var(--rk-radius);
+      font-size: 0.8rem;
+      cursor: pointer;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      transition: all var(--rk-transition);
+    }
+
+    .history-item:hover {
+      background: var(--rk-accent-glow);
+    }
+
+    /* Loading indicator */
+    .typing-indicator {
+      display: flex;
+      gap: 4px;
+      padding: var(--rk-space-md);
+    }
+
+    .typing-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--rk-accent);
+      animation: typing 1.4s infinite ease-in-out both;
+    }
+
+    .typing-dot:nth-child(1) { animation-delay: -0.32s; }
+    .typing-dot:nth-child(2) { animation-delay: -0.16s; }
+
+    @keyframes typing {
+      0%, 80%, 100% { transform: scale(0); opacity: 0.5; }
+      40% { transform: scale(1); opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+  <div class="rk-bg-grid"></div>
+  <div class="rk-bg-glow"></div>
+
+  <header>
+    <a href="../desktop/index.html" class="back-link">&larr;</a>
+    <div class="module-title">
+      <span class="icon">🤖</span>
+      <h1>AI Assistant</h1>
+    </div>
+    <span class="rk-badge">LLM</span>
+
+    <div class="header-controls">
+      <div class="llm-info">
+        <span class="llm-model" id="llm-model">Loading...</span>
+      </div>
+      <div class="status">
+        <div id="status-dot" class="rk-status-dot"></div>
+        <span id="status-text">Connecting...</span>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div class="chat-container">
+      <div class="chat-messages rk-scroll" id="chat-messages">
+        <div class="welcome" id="welcome">
+          <div class="welcome-icon">🤖</div>
+          <h2>RubiKit AI Assistant</h2>
+          <p>Ask me anything about Anarchy Online - implants, builds, combat strategies, trading tips, and more.</p>
+          <div class="suggestions">
+            <button class="suggestion" data-prompt="What implants should I prioritize for a level 200 Enforcer?">Implant advice</button>
+            <button class="suggestion" data-prompt="Explain how damage modifiers work">Damage modifiers</button>
+            <button class="suggestion" data-prompt="What's the best way to make credits at high level?">Credit farming</button>
+            <button class="suggestion" data-prompt="Calculate treatment needed for QL 300 implants">QL 300 requirements</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="chat-input-area">
+        <div class="input-wrapper">
+          <textarea class="chat-textarea" id="chat-input" placeholder="Ask me anything about AO..." rows="1"></textarea>
+          <button class="send-btn" id="send-btn" title="Send message">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <aside class="sidebar">
+      <div class="sidebar-section">
+        <h3 class="sidebar-title">Current Context</h3>
+        <div id="context-panel">
+          <div class="context-item">
+            <span class="context-label">Character</span>
+            <span class="context-value" id="ctx-char">-</span>
+          </div>
+          <div class="context-item">
+            <span class="context-label">Level</span>
+            <span class="context-value" id="ctx-level">-</span>
+          </div>
+          <div class="context-item">
+            <span class="context-label">Profession</span>
+            <span class="context-value" id="ctx-prof">-</span>
+          </div>
+          <div class="context-item">
+            <span class="context-label">Treatment</span>
+            <span class="context-value" id="ctx-treatment">-</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <h3 class="sidebar-title">Capabilities</h3>
+        <div class="capability-list">
+          <div class="capability">
+            <span class="capability-icon">✓</span>
+            <span>Implant calculations and recommendations</span>
+          </div>
+          <div class="capability">
+            <span class="capability-icon">✓</span>
+            <span>Build optimization advice</span>
+          </div>
+          <div class="capability">
+            <span class="capability-icon">✓</span>
+            <span>Combat strategy analysis</span>
+          </div>
+          <div class="capability">
+            <span class="capability-icon">✓</span>
+            <span>Trading and market insights</span>
+          </div>
+          <div class="capability">
+            <span class="capability-icon">✓</span>
+            <span>Game mechanics explanations</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="sidebar-section" style="flex: 1;">
+        <h3 class="sidebar-title">Recent Questions</h3>
+        <div class="history-list rk-scroll" id="history-list">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+    </aside>
+  </main>
+
+  <script src="../shared/rubikit-common.js"></script>
+  <script>
+    const API_BASE = 'http://127.0.0.1:8777';
+
+    const chatMessages = document.getElementById('chat-messages');
+    const chatInput = document.getElementById('chat-input');
+    const sendBtn = document.getElementById('send-btn');
+    const welcome = document.getElementById('welcome');
+    const historyList = document.getElementById('history-list');
+
+    let history = [];
+
+    function addMessage(text, type, timestamp = new Date()) {
+      // Hide welcome on first message
+      if (welcome) welcome.style.display = 'none';
+
+      const msg = document.createElement('div');
+      msg.className = `message ${type}`;
+      msg.innerHTML = `
+        <div class="message-content">${escapeHtml(text)}</div>
+        <div class="message-meta">${formatTime(timestamp)}</div>
+      `;
+      chatMessages.appendChild(msg);
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+
+      // Add to history if user message
+      if (type === 'user') {
+        history.unshift({ text, timestamp });
+        if (history.length > 10) history.pop();
+        renderHistory();
+      }
+    }
+
+    function showTyping() {
+      const typing = document.createElement('div');
+      typing.className = 'message assistant';
+      typing.id = 'typing-indicator';
+      typing.innerHTML = `
+        <div class="message-content">
+          <div class="typing-indicator">
+            <div class="typing-dot"></div>
+            <div class="typing-dot"></div>
+            <div class="typing-dot"></div>
+          </div>
+        </div>
+      `;
+      chatMessages.appendChild(typing);
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    function hideTyping() {
+      const typing = document.getElementById('typing-indicator');
+      if (typing) typing.remove();
+    }
+
+    async function sendMessage() {
+      const text = chatInput.value.trim();
+      if (!text) return;
+
+      addMessage(text, 'user');
+      chatInput.value = '';
+      chatInput.style.height = 'auto';
+      sendBtn.disabled = true;
+      showTyping();
+
+      try {
+        const res = await fetch(`${API_BASE}/api/assistant/ask?question=${encodeURIComponent(text)}`, {
+          method: 'POST',
+          mode: 'cors'
+        });
+
+        hideTyping();
+
+        if (res.ok) {
+          const data = await res.json();
+          addMessage(data.answer || 'No response received.', 'assistant');
+        } else {
+          addMessage('Sorry, I encountered an error. Please try again.', 'assistant');
+        }
+      } catch (e) {
+        hideTyping();
+        addMessage('Unable to reach the assistant. Make sure RubiKit is running.', 'assistant');
+      }
+
+      sendBtn.disabled = false;
+      chatInput.focus();
+    }
+
+    function renderHistory() {
+      historyList.innerHTML = history.map(h => `
+        <div class="history-item" data-text="${escapeHtml(h.text)}">${h.text}</div>
+      `).join('');
+
+      historyList.querySelectorAll('.history-item').forEach(item => {
+        item.addEventListener('click', () => {
+          chatInput.value = item.dataset.text;
+          chatInput.focus();
+        });
+      });
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    function formatTime(date) {
+      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
+
+    // Auto-resize textarea
+    chatInput.addEventListener('input', () => {
+      chatInput.style.height = 'auto';
+      chatInput.style.height = Math.min(chatInput.scrollHeight, 150) + 'px';
+    });
+
+    // Send on Enter (Shift+Enter for new line)
+    chatInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+      }
+    });
+
+    sendBtn.addEventListener('click', sendMessage);
+
+    // Suggestions
+    document.querySelectorAll('.suggestion').forEach(btn => {
+      btn.addEventListener('click', () => {
+        chatInput.value = btn.dataset.prompt;
+        sendMessage();
+      });
+    });
+
+    // Load LLM status
+    async function loadLLMStatus() {
+      try {
+        const res = await fetch(`${API_BASE}/api/llm/status`, { mode: 'cors' });
+        if (res.ok) {
+          const data = await res.json();
+          document.getElementById('llm-model').textContent = data.model || (data.enabled ? 'LLM Ready' : 'LLM Disabled');
+          document.getElementById('status-dot').classList.toggle('ok', data.enabled);
+          document.getElementById('status-text').textContent = data.enabled ? 'Connected' : 'Disabled';
+        }
+      } catch (e) {
+        document.getElementById('llm-model').textContent = 'Offline';
+        document.getElementById('status-text').textContent = 'Disconnected';
+      }
+    }
+
+    // Load context
+    async function loadContext() {
+      try {
+        const res = await fetch(`${API_BASE}/api/context`, { mode: 'cors' });
+        if (res.ok) {
+          const data = await res.json();
+          // Update context panel with real data when available
+        }
+      } catch (e) {
+        // Context not available
+      }
+    }
+
+    // Load chat history
+    async function loadChatHistory() {
+      try {
+        const res = await fetch(`${API_BASE}/api/assistant/history`, { mode: 'cors' });
+        if (res.ok) {
+          const messages = await res.json();
+          messages.forEach(m => {
+            if (m.role === 'user') {
+              history.push({ text: m.content, timestamp: new Date(m.timestamp) });
+            }
+          });
+          renderHistory();
+        }
+      } catch (e) {
+        // History not available
+      }
+    }
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', () => {
+      // Don't initialize the floating assistant on this page (we have the full UI)
+      RubiKit.ThemeManager.load();
+      RubiKit.StatusBar.init();
+
+      loadLLMStatus();
+      loadContext();
+      loadChatHistory();
+
+      chatInput.focus();
+    });
+  </script>
+</body>
+</html>

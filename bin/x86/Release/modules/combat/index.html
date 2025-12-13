@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Combat Analyzer - RubiKit</title>
+  <link rel="stylesheet" href="../shared/rubikit-theme.css">
+  <style>
+    body { min-height: 100vh; display: flex; flex-direction: column; }
+
+    header {
+      padding: var(--rk-space-md) var(--rk-space-xl);
+      background: var(--rk-bg-secondary);
+      border-bottom: 1px solid var(--rk-border);
+      display: flex;
+      align-items: center;
+      gap: var(--rk-space-md);
+    }
+
+    .back-link { color: var(--rk-text-muted); text-decoration: none; font-size: 1.25rem; }
+    .back-link:hover { color: var(--rk-accent); }
+
+    .module-title { display: flex; align-items: center; gap: var(--rk-space-sm); }
+    .module-title h1 { font-size: 1.25rem; font-weight: 600; margin: 0; }
+
+    .header-controls { margin-left: auto; display: flex; align-items: center; gap: var(--rk-space-md); }
+    .status { display: flex; align-items: center; gap: var(--rk-space-sm); font-size: 0.8rem; color: var(--rk-text-secondary); }
+
+    main { flex: 1; padding: var(--rk-space-xl); max-width: 1400px; margin: 0 auto; width: 100%; }
+
+    /* DPS Display */
+    .dps-hero {
+      background: var(--rk-bg-card);
+      border: 1px solid var(--rk-border);
+      border-radius: var(--rk-radius-lg);
+      padding: var(--rk-space-xl);
+      text-align: center;
+      margin-bottom: var(--rk-space-lg);
+    }
+
+    .dps-label {
+      font-size: 0.8rem;
+      color: var(--rk-text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+
+    .dps-value {
+      font-size: 4rem;
+      font-family: var(--rk-font-num);
+      font-weight: 700;
+      color: var(--rk-accent);
+      text-shadow: 0 0 40px var(--rk-accent-glow);
+      line-height: 1.2;
+    }
+
+    .dps-meta {
+      display: flex;
+      justify-content: center;
+      gap: var(--rk-space-xl);
+      margin-top: var(--rk-space-md);
+      font-size: 0.85rem;
+    }
+
+    .dps-meta-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .dps-meta-label { color: var(--rk-text-muted); }
+    .dps-meta-value { font-family: var(--rk-font-num); font-weight: 600; }
+
+    /* Combat Log */
+    .combat-grid {
+      display: grid;
+      grid-template-columns: 1fr 350px;
+      gap: var(--rk-space-lg);
+    }
+
+    @media (max-width: 1000px) {
+      .combat-grid { grid-template-columns: 1fr; }
+    }
+
+    .panel {
+      background: var(--rk-bg-card);
+      border: 1px solid var(--rk-border);
+      border-radius: var(--rk-radius-lg);
+      padding: var(--rk-space-md);
+    }
+
+    .panel-title {
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--rk-accent);
+      margin: 0 0 var(--rk-space-md) 0;
+      padding-bottom: var(--rk-space-sm);
+      border-bottom: 1px solid var(--rk-border);
+    }
+
+    /* Damage Breakdown */
+    .damage-breakdown { display: flex; flex-direction: column; gap: var(--rk-space-sm); }
+
+    .damage-row {
+      display: flex;
+      align-items: center;
+      gap: var(--rk-space-sm);
+    }
+
+    .damage-source {
+      width: 120px;
+      font-size: 0.85rem;
+      color: var(--rk-text-secondary);
+    }
+
+    .damage-bar {
+      flex: 1;
+      height: 24px;
+      background: rgba(0,0,0,0.3);
+      border-radius: var(--rk-radius-sm);
+      overflow: hidden;
+      position: relative;
+    }
+
+    .damage-bar-fill {
+      height: 100%;
+      border-radius: var(--rk-radius-sm);
+      display: flex;
+      align-items: center;
+      padding-left: var(--rk-space-sm);
+    }
+
+    .damage-bar-fill.melee { background: linear-gradient(90deg, #ef4444, #dc2626); }
+    .damage-bar-fill.ranged { background: linear-gradient(90deg, #f59e0b, #d97706); }
+    .damage-bar-fill.nano { background: linear-gradient(90deg, #38bdf8, #0284c7); }
+    .damage-bar-fill.special { background: linear-gradient(90deg, #a855f7, #7c3aed); }
+
+    .damage-bar-text {
+      font-size: 0.75rem;
+      font-family: var(--rk-font-num);
+      color: white;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+    }
+
+    .damage-pct {
+      width: 50px;
+      text-align: right;
+      font-size: 0.8rem;
+      font-family: var(--rk-font-num);
+      color: var(--rk-text-muted);
+    }
+
+    /* Combat Log */
+    .combat-log {
+      max-height: 400px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .log-line {
+      font-family: var(--rk-font-code);
+      font-size: 0.75rem;
+      padding: 2px var(--rk-space-sm);
+      border-radius: 2px;
+    }
+
+    .log-line.damage { color: var(--rk-hp-primary); }
+    .log-line.heal { color: var(--rk-success); }
+    .log-line.miss { color: var(--rk-text-muted); }
+    .log-line.crit { color: var(--rk-warning); background: rgba(245, 158, 11, 0.1); }
+    .log-line.special { color: var(--rk-accent); }
+
+    .log-time { color: var(--rk-text-muted); margin-right: var(--rk-space-sm); }
+
+    /* Stats sidebar */
+    .stats-list { display: flex; flex-direction: column; gap: var(--rk-space-sm); }
+
+    .stat-row {
+      display: flex;
+      justify-content: space-between;
+      padding: var(--rk-space-sm);
+      background: var(--rk-bg-interactive);
+      border-radius: var(--rk-radius);
+    }
+
+    .stat-label { color: var(--rk-text-secondary); font-size: 0.85rem; }
+    .stat-value { font-family: var(--rk-font-num); font-weight: 600; }
+
+    /* Controls */
+    .controls-row {
+      display: flex;
+      gap: var(--rk-space-sm);
+      margin-top: var(--rk-space-md);
+    }
+
+    .control-btn {
+      flex: 1;
+      padding: var(--rk-space-sm);
+    }
+
+    .control-btn.active {
+      background: var(--rk-error);
+      border-color: var(--rk-error);
+      color: white;
+    }
+  </style>
+</head>
+<body>
+  <div class="rk-bg-grid"></div>
+  <div class="rk-bg-glow"></div>
+
+  <header>
+    <a href="../desktop/index.html" class="back-link">&larr;</a>
+    <div class="module-title">
+      <span class="icon">⚔️</span>
+      <h1>Combat Analyzer</h1>
+    </div>
+    <span class="rk-badge">DPS Tracking</span>
+
+    <div class="header-controls">
+      <div class="status">
+        <div id="status-dot" class="rk-status-dot"></div>
+        <span id="status-text">Connecting...</span>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div class="dps-hero">
+      <div class="dps-label">Current DPS</div>
+      <div class="dps-value" id="dps-display">12,847</div>
+      <div class="dps-meta">
+        <div class="dps-meta-item">
+          <span class="dps-meta-label">Peak DPS</span>
+          <span class="dps-meta-value">18,234</span>
+        </div>
+        <div class="dps-meta-item">
+          <span class="dps-meta-label">Total Damage</span>
+          <span class="dps-meta-value">4.2M</span>
+        </div>
+        <div class="dps-meta-item">
+          <span class="dps-meta-label">Combat Time</span>
+          <span class="dps-meta-value">5:28</span>
+        </div>
+        <div class="dps-meta-item">
+          <span class="dps-meta-label">Crit Rate</span>
+          <span class="dps-meta-value">24.7%</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="combat-grid">
+      <div class="main-content">
+        <div class="panel">
+          <h2 class="panel-title">Damage Breakdown</h2>
+          <div class="damage-breakdown">
+            <div class="damage-row">
+              <span class="damage-source">Melee</span>
+              <div class="damage-bar">
+                <div class="damage-bar-fill melee" style="width: 45%">
+                  <span class="damage-bar-text">1.89M</span>
+                </div>
+              </div>
+              <span class="damage-pct">45%</span>
+            </div>
+            <div class="damage-row">
+              <span class="damage-source">Ranged</span>
+              <div class="damage-bar">
+                <div class="damage-bar-fill ranged" style="width: 28%">
+                  <span class="damage-bar-text">1.18M</span>
+                </div>
+              </div>
+              <span class="damage-pct">28%</span>
+            </div>
+            <div class="damage-row">
+              <span class="damage-source">Nano</span>
+              <div class="damage-bar">
+                <div class="damage-bar-fill nano" style="width: 20%">
+                  <span class="damage-bar-text">840K</span>
+                </div>
+              </div>
+              <span class="damage-pct">20%</span>
+            </div>
+            <div class="damage-row">
+              <span class="damage-source">Special</span>
+              <div class="damage-bar">
+                <div class="damage-bar-fill special" style="width: 7%">
+                  <span class="damage-bar-text">294K</span>
+                </div>
+              </div>
+              <span class="damage-pct">7%</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel" style="margin-top: var(--rk-space-lg);">
+          <h2 class="panel-title">Combat Log</h2>
+          <div class="combat-log rk-scroll" id="combat-log">
+            <div class="log-line crit"><span class="log-time">00:05:28</span>You hit Heckler for 4,521 (Crit!)</div>
+            <div class="log-line damage"><span class="log-time">00:05:27</span>You hit Heckler for 1,847</div>
+            <div class="log-line miss"><span class="log-time">00:05:26</span>You missed Heckler</div>
+            <div class="log-line damage"><span class="log-time">00:05:25</span>You hit Heckler for 2,103</div>
+            <div class="log-line special"><span class="log-time">00:05:24</span>Brawl executed: 3,842 damage</div>
+            <div class="log-line damage"><span class="log-time">00:05:23</span>You hit Heckler for 1,654</div>
+            <div class="log-line heal"><span class="log-time">00:05:22</span>Complete Heal: +28,000 HP</div>
+            <div class="log-line damage"><span class="log-time">00:05:21</span>You hit Heckler for 1,921</div>
+          </div>
+        </div>
+      </div>
+
+      <aside class="sidebar">
+        <div class="panel">
+          <h2 class="panel-title">Combat Stats</h2>
+          <div class="stats-list">
+            <div class="stat-row">
+              <span class="stat-label">Hits</span>
+              <span class="stat-value">1,847</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-label">Misses</span>
+              <span class="stat-value">312</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-label">Hit Rate</span>
+              <span class="stat-value">85.5%</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-label">Crits</span>
+              <span class="stat-value">456</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-label">Avg Hit</span>
+              <span class="stat-value">2,273</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-label">Max Hit</span>
+              <span class="stat-value">8,947</span>
+            </div>
+          </div>
+          <div class="controls-row">
+            <button class="rk-btn control-btn active" id="record-btn">Recording</button>
+            <button class="rk-btn control-btn" id="reset-btn">Reset</button>
+          </div>
+        </div>
+
+        <div class="panel" style="margin-top: var(--rk-space-md);">
+          <h2 class="panel-title">Target</h2>
+          <div class="stats-list">
+            <div class="stat-row">
+              <span class="stat-label">Name</span>
+              <span class="stat-value">Heckler</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-label">Level</span>
+              <span class="stat-value">220</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-label">HP</span>
+              <span class="stat-value">~2.1M</span>
+            </div>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </main>
+
+  <script src="../shared/rubikit-common.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      RubiKit.init();
+
+      // Simulate DPS updates
+      let dps = 12847;
+      setInterval(() => {
+        dps = Math.max(0, dps + (Math.random() - 0.5) * 1000);
+        document.getElementById('dps-display').textContent = Math.round(dps).toLocaleString();
+      }, 500);
+
+      // Fetch combat context
+      RubiKit.API.getContext('combat').then(data => {
+        console.log('Combat context:', data);
+      }).catch(() => {});
+    });
+  </script>
+</body>
+</html>

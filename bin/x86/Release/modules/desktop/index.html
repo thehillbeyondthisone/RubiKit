@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RubiKit Desktop</title>
+  <link rel="stylesheet" href="../shared/rubikit-theme.css">
+  <style>
+    body {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Header */
+    header {
+      position: relative;
+      z-index: 10;
+      padding: var(--rk-space-lg) var(--rk-space-xl);
+      background: var(--rk-bg-secondary);
+      border-bottom: 1px solid var(--rk-border);
+      display: flex;
+      align-items: center;
+      gap: var(--rk-space-md);
+    }
+
+    .header-controls {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: var(--rk-space-lg);
+    }
+
+    .theme-controls {
+      display: flex;
+      align-items: center;
+      gap: var(--rk-space-sm);
+    }
+
+    .theme-controls label {
+      font-size: 0.75rem;
+      color: var(--rk-text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .theme-controls select {
+      font-family: var(--rk-font-ui);
+      font-size: 0.8rem;
+      background: var(--rk-bg-card);
+      border: 1px solid var(--rk-border);
+      color: var(--rk-text-primary);
+      padding: 0.35rem 0.75rem;
+      border-radius: var(--rk-radius);
+      cursor: pointer;
+      transition: all var(--rk-transition);
+    }
+
+    .theme-controls select:hover {
+      border-color: var(--rk-accent);
+    }
+
+    .theme-controls select:focus {
+      outline: none;
+      border-color: var(--rk-accent);
+      box-shadow: 0 0 0 3px var(--rk-ring);
+    }
+
+    .status {
+      display: flex;
+      align-items: center;
+      gap: var(--rk-space-sm);
+      font-size: 0.8rem;
+      color: var(--rk-text-secondary);
+    }
+
+    /* Main Content */
+    main {
+      position: relative;
+      z-index: 1;
+      flex: 1;
+      padding: var(--rk-space-xl);
+      max-width: 1400px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    .section-title {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--rk-text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: var(--rk-space-lg);
+      display: flex;
+      align-items: center;
+      gap: var(--rk-space-sm);
+    }
+
+    .section-title::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--rk-border);
+    }
+
+    /* Modules Grid */
+    .modules-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: var(--rk-space-lg);
+      margin-bottom: var(--rk-space-xl);
+    }
+
+    .module-card {
+      background: var(--rk-bg-card);
+      border: 1px solid var(--rk-border);
+      border-radius: var(--rk-radius-xl);
+      padding: var(--rk-space-lg);
+      cursor: pointer;
+      transition: all var(--rk-transition);
+      text-decoration: none;
+      color: inherit;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: var(--rk-space-md);
+    }
+
+    .module-card:hover {
+      background: var(--rk-bg-card-hover);
+      border-color: var(--rk-accent);
+      transform: translateY(-4px);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), 0 0 0 1px var(--rk-accent-glow);
+    }
+
+    .module-icon {
+      width: 72px;
+      height: 72px;
+      border-radius: var(--rk-radius-lg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 32px;
+      box-shadow: 0 4px 16px var(--rk-accent-glow);
+      transition: transform var(--rk-transition), box-shadow var(--rk-transition);
+    }
+
+    .module-card:hover .module-icon {
+      transform: scale(1.08);
+      box-shadow: 0 6px 24px var(--rk-accent-glow);
+    }
+
+    /* Module-specific icon colors */
+    .icon-notum { background: linear-gradient(135deg, #38bdf8 0%, #0077b6 100%); }
+    .icon-hydra { background: linear-gradient(135deg, #a855f7 0%, #6b21a8 100%); }
+    .icon-xanalytics { background: linear-gradient(135deg, #22c55e 0%, #15803d 100%); }
+    .icon-combat { background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%); }
+    .icon-trading { background: linear-gradient(135deg, #f59e0b 0%, #b45309 100%); }
+    .icon-build { background: linear-gradient(135deg, #06b6d4 0%, #0e7490 100%); }
+    .icon-assistant { background: linear-gradient(135deg, #ec4899 0%, #be185d 100%); }
+
+    .module-name {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--rk-text-primary);
+    }
+
+    .module-desc {
+      font-size: 0.8rem;
+      color: var(--rk-text-secondary);
+      line-height: 1.5;
+    }
+
+    .module-tag {
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 0.2rem 0.5rem;
+      border-radius: var(--rk-radius-xl);
+      background: var(--rk-bg-interactive);
+      color: var(--rk-accent);
+    }
+
+    /* Footer */
+    footer {
+      position: relative;
+      z-index: 1;
+      padding: var(--rk-space-md) var(--rk-space-xl);
+      background: var(--rk-bg-secondary);
+      border-top: 1px solid var(--rk-border);
+      font-size: 0.75rem;
+      color: var(--rk-text-muted);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    footer a {
+      color: var(--rk-accent);
+      text-decoration: none;
+      transition: color var(--rk-transition);
+    }
+
+    footer a:hover {
+      color: var(--rk-text-primary);
+    }
+
+    /* Loading state */
+    .loading {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 64px;
+    }
+
+    /* ===== Floating Assistant Chat ===== */
+    #assistant-toggle {
+      position: fixed;
+      bottom: var(--rk-space-lg);
+      right: var(--rk-space-lg);
+      z-index: 100;
+      width: 56px;
+      height: 56px;
+      background: linear-gradient(135deg, var(--rk-accent) 0%, var(--rk-accent-secondary) 100%);
+      border: none;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 20px var(--rk-accent-glow);
+      transition: all var(--rk-transition);
+    }
+
+    #assistant-toggle:hover {
+      transform: scale(1.1);
+      box-shadow: 0 6px 28px var(--rk-accent-glow);
+    }
+
+    #assistant-toggle svg {
+      width: 28px;
+      height: 28px;
+      fill: white;
+    }
+
+    #assistant-panel {
+      position: fixed;
+      bottom: 88px;
+      right: var(--rk-space-lg);
+      z-index: 99;
+      width: 380px;
+      max-height: 520px;
+      background: var(--rk-bg-secondary);
+      border: 1px solid var(--rk-border);
+      border-radius: var(--rk-radius-lg);
+      box-shadow: 0 8px 40px rgba(0,0,0,0.4);
+      display: none;
+      flex-direction: column;
+      overflow: hidden;
+      animation: rk-slide-up 0.25s ease-out;
+    }
+
+    #assistant-panel.open {
+      display: flex;
+    }
+
+    .assistant-header {
+      padding: var(--rk-space-md);
+      background: var(--rk-bg-card);
+      border-bottom: 1px solid var(--rk-border);
+      display: flex;
+      align-items: center;
+      gap: var(--rk-space-sm);
+    }
+
+    .assistant-header h3 {
+      font-size: 0.9rem;
+      font-weight: 600;
+      margin: 0;
+      flex: 1;
+    }
+
+    .assistant-header .llm-status {
+      font-size: 0.7rem;
+      color: var(--rk-text-muted);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .assistant-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: var(--rk-space-md);
+      display: flex;
+      flex-direction: column;
+      gap: var(--rk-space-sm);
+      min-height: 300px;
+    }
+
+    .message {
+      max-width: 85%;
+      padding: var(--rk-space-sm) var(--rk-space-md);
+      border-radius: var(--rk-radius);
+      font-size: 0.85rem;
+      line-height: 1.5;
+      animation: rk-fade-in 0.2s ease-out;
+    }
+
+    .message.user {
+      align-self: flex-end;
+      background: var(--rk-accent);
+      color: var(--rk-bg-primary);
+    }
+
+    .message.assistant {
+      align-self: flex-start;
+      background: var(--rk-bg-card);
+      color: var(--rk-text-primary);
+      border: 1px solid var(--rk-border);
+    }
+
+    .message.system {
+      align-self: center;
+      background: transparent;
+      color: var(--rk-text-muted);
+      font-size: 0.75rem;
+      font-style: italic;
+    }
+
+    .assistant-input {
+      padding: var(--rk-space-md);
+      background: var(--rk-bg-card);
+      border-top: 1px solid var(--rk-border);
+      display: flex;
+      gap: var(--rk-space-sm);
+    }
+
+    .assistant-input input {
+      flex: 1;
+      font-family: var(--rk-font-ui);
+      font-size: 0.85rem;
+      background: var(--rk-bg-primary);
+      border: 1px solid var(--rk-border);
+      color: var(--rk-text-primary);
+      padding: var(--rk-space-sm) var(--rk-space-md);
+      border-radius: var(--rk-radius);
+      outline: none;
+      transition: all var(--rk-transition);
+    }
+
+    .assistant-input input:focus {
+      border-color: var(--rk-accent);
+      box-shadow: 0 0 0 3px var(--rk-ring);
+    }
+
+    .assistant-input button {
+      font-family: var(--rk-font-ui);
+      font-size: 0.85rem;
+      font-weight: 600;
+      background: var(--rk-accent);
+      border: none;
+      color: var(--rk-bg-primary);
+      padding: var(--rk-space-sm) var(--rk-space-md);
+      border-radius: var(--rk-radius);
+      cursor: pointer;
+      transition: all var(--rk-transition);
+    }
+
+    .assistant-input button:hover {
+      background: var(--rk-accent-secondary);
+    }
+
+    .assistant-input button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* Quick Actions */
+    .quick-actions {
+      padding: var(--rk-space-sm) var(--rk-space-md);
+      display: flex;
+      gap: var(--rk-space-xs);
+      flex-wrap: wrap;
+      border-bottom: 1px solid var(--rk-border);
+    }
+
+    .quick-action {
+      font-size: 0.7rem;
+      padding: 0.25rem 0.5rem;
+      background: var(--rk-bg-interactive);
+      border: 1px solid var(--rk-border);
+      color: var(--rk-text-secondary);
+      border-radius: var(--rk-radius-xl);
+      cursor: pointer;
+      transition: all var(--rk-transition);
+    }
+
+    .quick-action:hover {
+      background: var(--rk-accent-glow);
+      border-color: var(--rk-accent);
+      color: var(--rk-text-primary);
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .modules-grid {
+        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      }
+
+      .theme-controls label {
+        display: none;
+      }
+
+      #assistant-panel {
+        width: calc(100vw - 32px);
+        right: 16px;
+        bottom: 80px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="rk-bg-grid"></div>
+  <div class="rk-bg-glow"></div>
+
+  <header>
+    <div class="rk-logo">Rubi<span>Kit</span></div>
+    <span class="rk-badge">v2.1</span>
+
+    <div class="header-controls">
+      <div class="theme-controls">
+        <label>Theme</label>
+        <select id="theme-select">
+          <option value="">Notum</option>
+          <option value="theme-inferno">Inferno</option>
+          <option value="theme-nixie">Nixie</option>
+          <option value="theme-dark">Terminal</option>
+          <option value="theme-light">Paper</option>
+          <option value="theme-monokai">Monokai</option>
+        </select>
+      </div>
+
+      <div class="theme-controls">
+        <label>Font</label>
+        <select id="font-select">
+          <option value="">Default</option>
+          <option value="font-sci-fi">Sci-Fi</option>
+          <option value="font-mono">Mono</option>
+          <option value="font-tech">Tech</option>
+          <option value="font-aldrich">Aldrich</option>
+          <option value="font-vt323">VT323</option>
+        </select>
+      </div>
+
+      <div class="status">
+        <div id="status-dot" class="rk-status-dot"></div>
+        <span id="status-text">Connecting...</span>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <h2 class="section-title">Modules</h2>
+    <div id="modules-container" class="modules-grid">
+      <!-- Modules will be rendered here -->
+    </div>
+  </main>
+
+  <footer>
+    <span>RubiKit Desktop</span>
+    <div>
+      <a href="/api/modules">API</a> &middot;
+      <a href="/api/llm/status">LLM Status</a> &middot;
+      <a href="/api/endpoints">Endpoints</a>
+    </div>
+  </footer>
+
+  <!-- Floating Assistant -->
+  <button id="assistant-toggle" title="RubiKit Assistant">
+    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
+    </svg>
+  </button>
+
+  <div id="assistant-panel">
+    <div class="assistant-header">
+      <h3>RubiKit Assistant</h3>
+      <span class="llm-status">
+        <span id="llm-dot" class="rk-status-dot"></span>
+        <span id="llm-status-text">LLM</span>
+      </span>
+    </div>
+    <div class="quick-actions">
+      <button class="quick-action" data-prompt="What implants can I equip at my level?">Implant help</button>
+      <button class="quick-action" data-prompt="Analyze my current build">Build analysis</button>
+      <button class="quick-action" data-prompt="What should I do to improve my damage?">Damage tips</button>
+      <button class="quick-action" data-prompt="Show me trading opportunities">Trading</button>
+    </div>
+    <div id="assistant-messages" class="assistant-messages rk-scroll">
+      <div class="message system">Ask me anything about AO, your build, or trading.</div>
+    </div>
+    <div class="assistant-input">
+      <input type="text" id="assistant-input" placeholder="Ask RubiKit..." autocomplete="off">
+      <button id="assistant-send">Send</button>
+    </div>
+  </div>
+
+  <script>
+    // ===== Configuration =====
+    const API_BASE = `http://127.0.0.1:8777`;
+
+    // ===== Module Definitions =====
+    const MODULES = [
+      {
+        id: 'notumhud',
+        name: 'NotumHUD',
+        icon: '📊',
+        iconClass: 'icon-notum',
+        description: 'Real-time character stats, damage modifiers, and armor classes',
+        path: '/modules/notumhud/index.html',
+        tag: 'Stats'
+      },
+      {
+        id: 'hydra',
+        name: 'Hydra',
+        icon: '🐉',
+        iconClass: 'icon-hydra',
+        description: 'Multi-character coordination, team synergy, and buff tracking',
+        path: '/modules/hydra/index.html',
+        tag: 'Team'
+      },
+      {
+        id: 'xanalytics',
+        name: 'XAnalytics',
+        icon: '📈',
+        iconClass: 'icon-xanalytics',
+        description: 'XP tracking, leveling projections, and progression analytics',
+        path: '/modules/xanalytics/index.html',
+        tag: 'Analytics'
+      },
+      {
+        id: 'combat',
+        name: 'Combat Analyzer',
+        icon: '⚔️',
+        iconClass: 'icon-combat',
+        description: 'DPS analysis, combat logging, and damage breakdowns',
+        path: '/modules/combat/index.html',
+        tag: 'Combat'
+      },
+      {
+        id: 'trading',
+        name: 'Shop Builder',
+        icon: '🏪',
+        iconClass: 'icon-trading',
+        description: 'Market analysis, price tracking, and shop management',
+        path: '/modules/trading/index.html',
+        tag: 'Trading'
+      },
+      {
+        id: 'build',
+        name: 'Build Planner',
+        icon: '🔧',
+        iconClass: 'icon-build',
+        description: 'Implant calculator, skill planning, and equipment optimization',
+        path: '/modules/build/index.html',
+        tag: 'Builds'
+      },
+      {
+        id: 'assistant',
+        name: 'AI Assistant',
+        icon: '🤖',
+        iconClass: 'icon-assistant',
+        description: 'LLM-powered help, questions, calculations, and game knowledge',
+        path: '/modules/assistant/index.html',
+        tag: 'AI'
+      }
+    ];
+
+    // ===== Theme Management =====
+    const themeSelect = document.getElementById('theme-select');
+    const fontSelect = document.getElementById('font-select');
+
+    function loadPreferences() {
+      const theme = localStorage.getItem('rk-theme') || '';
+      const font = localStorage.getItem('rk-font') || '';
+
+      if (theme) {
+        document.body.classList.add(theme);
+        themeSelect.value = theme;
+      }
+      if (font) {
+        document.body.classList.add(font);
+        fontSelect.value = font;
+      }
+    }
+
+    function setTheme(theme) {
+      // Remove existing theme classes
+      document.body.classList.remove('theme-inferno', 'theme-nixie', 'theme-dark', 'theme-light', 'theme-monokai');
+      if (theme) {
+        document.body.classList.add(theme);
+      }
+      localStorage.setItem('rk-theme', theme);
+    }
+
+    function setFont(font) {
+      // Remove existing font classes
+      document.body.classList.remove('font-sci-fi', 'font-mono', 'font-tech', 'font-aldrich', 'font-vt323');
+      if (font) {
+        document.body.classList.add(font);
+      }
+      localStorage.setItem('rk-font', font);
+    }
+
+    themeSelect.addEventListener('change', (e) => setTheme(e.target.value));
+    fontSelect.addEventListener('change', (e) => setFont(e.target.value));
+
+    // ===== Module Rendering =====
+    function renderModules() {
+      const container = document.getElementById('modules-container');
+      container.innerHTML = MODULES.map(m => `
+        <a href="${m.path}" class="module-card" data-module="${m.id}">
+          <div class="module-icon ${m.iconClass}">${m.icon}</div>
+          <div class="module-name">${m.name}</div>
+          <div class="module-desc">${m.description}</div>
+          <span class="module-tag">${m.tag}</span>
+        </a>
+      `).join('');
+    }
+
+    // ===== API Status Check =====
+    async function checkStatus() {
+      const dot = document.getElementById('status-dot');
+      const text = document.getElementById('status-text');
+
+      try {
+        const res = await fetch(`${API_BASE}/health`, { mode: 'cors' });
+        if (res.ok) {
+          dot.classList.add('ok');
+          text.textContent = 'Connected';
+        } else {
+          throw new Error('API error');
+        }
+      } catch (e) {
+        dot.classList.remove('ok');
+        dot.classList.add('error');
+        text.textContent = 'Disconnected';
+      }
+    }
+
+    async function checkLLMStatus() {
+      const dot = document.getElementById('llm-dot');
+      const text = document.getElementById('llm-status-text');
+
+      try {
+        const res = await fetch(`${API_BASE}/api/llm/status`, { mode: 'cors' });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.enabled) {
+            dot.classList.add('ok');
+            text.textContent = data.model || 'LLM Ready';
+          } else {
+            dot.classList.remove('ok');
+            text.textContent = 'LLM Disabled';
+          }
+        }
+      } catch (e) {
+        dot.classList.remove('ok');
+        text.textContent = 'LLM Offline';
+      }
+    }
+
+    // ===== Assistant Chat =====
+    const assistantToggle = document.getElementById('assistant-toggle');
+    const assistantPanel = document.getElementById('assistant-panel');
+    const assistantInput = document.getElementById('assistant-input');
+    const assistantSend = document.getElementById('assistant-send');
+    const assistantMessages = document.getElementById('assistant-messages');
+
+    assistantToggle.addEventListener('click', () => {
+      assistantPanel.classList.toggle('open');
+      if (assistantPanel.classList.contains('open')) {
+        assistantInput.focus();
+      }
+    });
+
+    // Quick actions
+    document.querySelectorAll('.quick-action').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const prompt = btn.dataset.prompt;
+        if (prompt) {
+          assistantInput.value = prompt;
+          sendMessage();
+        }
+      });
+    });
+
+    function addMessage(text, type = 'assistant') {
+      const msg = document.createElement('div');
+      msg.className = `message ${type}`;
+      msg.textContent = text;
+      assistantMessages.appendChild(msg);
+      assistantMessages.scrollTop = assistantMessages.scrollHeight;
+    }
+
+    async function sendMessage() {
+      const question = assistantInput.value.trim();
+      if (!question) return;
+
+      addMessage(question, 'user');
+      assistantInput.value = '';
+      assistantSend.disabled = true;
+
+      try {
+        const res = await fetch(`${API_BASE}/api/assistant/ask?question=${encodeURIComponent(question)}`, {
+          method: 'POST',
+          mode: 'cors'
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          addMessage(data.answer || 'No response received.', 'assistant');
+        } else {
+          addMessage('Error: Could not reach the assistant.', 'system');
+        }
+      } catch (e) {
+        addMessage('Error: Assistant is offline. Check API connection.', 'system');
+      }
+
+      assistantSend.disabled = false;
+    }
+
+    assistantSend.addEventListener('click', sendMessage);
+    assistantInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') sendMessage();
+    });
+
+    // ===== Initialize =====
+    document.addEventListener('DOMContentLoaded', () => {
+      loadPreferences();
+      renderModules();
+      checkStatus();
+      checkLLMStatus();
+
+      // Periodic status checks
+      setInterval(checkStatus, 30000);
+      setInterval(checkLLMStatus, 30000);
+    });
+  </script>
+</body>
+</html>
