@@ -2,7 +2,8 @@
   {
     "id": "notumhud",
     "name": "NotumHUD",
-    "icon": "chart",
+    "icon": "modules/icons/notumhud.svg",
+    "description": "Real-time character stats HUD",
     "path": "modules/notumhud/index.html",
     "persistent": true
   },
@@ -10,7 +11,48 @@
     "id": "llm",
     "name": "LLM",
     "icon": "brain",
+    "description": "LLM settings and tools",
     "path": "modules/llm/index.html",
+    "persistent": true
+  },
+  {
+    "id": "hydra",
+    "name": "Hydra",
+    "icon": "modules/icons/hydra.svg",
+    "description": "Multi-headed observer for game monitoring",
+    "path": "modules/hydra/index.html",
+    "persistent": true
+  },
+  {
+    "id": "xanalytics",
+    "name": "Xanalytics",
+    "icon": "modules/icons/xanalytics.svg",
+    "description": "Live analytics dashboard",
+    "path": "modules/xanalytics/index.html",
+    "persistent": false
+  },
+  {
+    "id": "shopmaker",
+    "name": "ShopMaker",
+    "icon": "modules/icons/shopmaker.svg",
+    "description": "AO shop window builder",
+    "path": "modules/shopmaker/index.html",
+    "persistent": false
+  },
+  {
+    "id": "mapviewer",
+    "name": "MapViewer",
+    "icon": "modules/icons/mapviewer.svg",
+    "description": "Interactive map with waypoints",
+    "path": "modules/mapviewer/index.html",
+    "persistent": false
+  },
+  {
+    "id": "notumvision",
+    "name": "NotumVision",
+    "icon": "modules/icons/notumvision.svg",
+    "description": "Advanced HUD with proximity guard",
+    "path": "modules/notumvision/index.html",
     "persistent": true
   }
 ]

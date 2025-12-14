@@ -1,0 +1,637 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>AO Shop Window Builder — Categories</title>
+<style>
+  :root{--bg:#0e0f12;--panel:#16181d;--panel2:#1b1e24;--ink:#e9ecf1;--muted:#9aa3b2;--accent:#4da3ff;--ok:#39c07f;--warn:#ffc247;--err:#ff5c5c;--br:16px;--gap:12px;--pad:12px}
+  html,body{height:100%;background:var(--bg);color:var(--ink);font:16px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Inter,sans-serif;margin:0}
+  .wrap{display:grid;grid-template-columns:330px 1fr 420px;gap:var(--gap);height:100vh;overflow:hidden}
+  @media(max-width:1200px){.wrap{grid-template-columns:1fr;grid-auto-rows:min-content;overflow:auto}}
+  .col{display:flex;flex-direction:column;gap:var(--gap);padding:14px;overflow-y:auto}
+  .card{background:var(--panel);border:1px solid #232734;border-radius:var(--br);padding:var(--pad);box-shadow:0 6px 24px rgba(0,0,0,.25)}
+  .card h2{margin:.25rem 0 .5rem;font-size:15px;color:#cfd6e6}
+  input,select,button,textarea{appearance:none;background:var(--panel2);color:var(--ink);border:1px solid #2a2f3c;border-radius:12px;padding:8px 10px;font:inherit;width:100%;box-sizing:border-box}
+  select{background-image:url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");background-position:right .5rem center;background-repeat:no-repeat;background-size:1.5em 1.5em;padding-right:2.5rem}
+  input:focus,select:focus,textarea:focus,button:focus{outline:none;box-shadow:0 0 0 2px rgba(77,163,255,.3)}
+  textarea{min-height:60px;resize:vertical}
+  .btn{cursor:pointer;transition:transform .12s;width:auto}
+  .btn:hover{transform:translateY(-1px)}
+  .btn.primary{background:#2b66d3}
+  .btn.success{background:#1e7b4d}
+  .btn.ghost{background:transparent;border-color:#3a4256}
+  .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .field{display:flex;flex-direction:column;gap:4px;margin-bottom:8px}
+  .mono{font:13px ui-monospace,Menlo,Consolas,monospace}
+  .muted{color:var(--muted)}
+  .tiny{font-size:12px}
+  .list{display:flex;flex-direction:column;gap:10px}
+  .item{background:#10131a;border:1px solid #2a2f3c;border-radius:12px;padding:12px;display:grid;gap:8px}
+  .item .hdr{display:flex;justify-content:space-between;align-items:center}
+  details{border:1px solid #2a2f3c;border-radius:12px;padding:8px}
+  details summary{cursor:pointer;font-size:13px;color:var(--muted)}
+  .details-content{margin-top:10px}
+  .tag{font-size:12px;color:#a9b3c4;background:#0d1118;border:1px solid #2b3244;padding:2px 8px;border-radius:999px}
+  .actions{display:flex;gap:6px}
+  .previewBox{background:#0c0f15;border:1px solid #2a2f3c;border-radius:12px;padding:12px;min-height:300px}
+  .aoWin{background:#0b0e14;border:1px solid #2a2f3c;border-radius:10px;padding:14px;font-size:14px}
+  .hint{background:#11151b;border:1px solid #243042;border-radius:12px;padding:10px;color:#b8c6da}
+  .success{background:#12261a;border:1px solid #214b33;color:#c3f1d1;border-radius:12px;padding:10px}
+  .error{background:#291517;border:1px solid #5a1f28;color:#ffb8c2;border-radius:12px;padding:10px}
+  .pasteRow{display:flex;gap:8px;align-items:center}
+  .pasteBox{flex:1}
+  .thumbRow{display:flex;gap:8px;align-items:center}
+  .thumb{width:28px;height:28px;border-radius:6px;border:1px solid #2a2f3c;object-fit:cover;background:#0b0f17;width:auto}
+  .colorPicker{display:grid;grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:6px;margin-top:6px}
+  .colorBtn{padding:6px 8px;border-radius:8px;font-size:12px;cursor:pointer;border:1px solid #2a2f3c;transition:transform .12s}
+  .colorBtn:hover{transform:scale(1.05);border-color:#4da3ff}
+  .colorBtn.selected{border:2px solid #4da3ff;font-weight:600}
+  .pager{display:flex;justify-content:center;align-items:center;gap:10px;margin-top:8px}
+  .indexHint{font-size:12px;color:#a9b3c4;border:1px dashed #334055;border-radius:8px;padding:6px 8px;margin-top:8px;display:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="col">
+    <section class="card">
+      <h2>Shop Settings</h2>
+      <div class="field"><label>Shop Title</label><input id="shopTitle" placeholder="My Shop" /></div>
+      <div class="field"><label>Title Color</label>
+        <select id="titleColor">
+          <option value="AOYellow">Yellow (default)</option>
+          <option value="#00ff00">Green</option>
+          <option value="#ff6600">Orange</option>
+          <option value="#ff0000">Red</option>
+          <option value="#00ffff">Cyan</option>
+          <option value="#ff00ff">Magenta</option>
+          <option value="#ffffff">White</option>
+          <option value="#cccccc">Light Gray</option>
+        </select>
+      </div>
+      <div class="field"><label>Header Text (optional)</label><textarea id="headerText" placeholder="Welcome to my shop!"></textarea></div>
+      <div class="field"><label>Footer Text (optional)</label><textarea id="footerText" placeholder="/tell YourName for orders"></textarea></div>
+      <div class="row" style="margin-bottom:8px"><label class="pill" style="display:flex;align-items:center;gap:6px"><input type="checkbox" id="groupByCat" style="width:auto;accent-color:#4da3ff"> <span>Group by Category (uses Static Pages)</span></label></div>
+      <div class="field"><label>Items per Page</label><input type="number" id="itemsPerPage" value="5" min="1" max="20" /></div>
+    </section>
+
+    <section class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center"><h2>Static Pages</h2><button class="btn success sm" id="addPage">+ New Page</button></div>
+      <div class="tiny muted" style="margin-bottom:8px">These act as categories. Create them here first, then assign items to them.</div>
+      <div id="pages" class="list"></div>
+    </section>
+
+    <section class="card">
+      <h2>Navigation Labels</h2>
+      <div class="field"><label>Previous</label><input id="prevLabel" value="« Previous" /></div>
+      <div class="field"><label>Next</label><input id="nextLabel" value="Next »" /></div>
+    </section>
+
+    <section class="card">
+      <h2>Project</h2>
+      <div class="row">
+        <button class="btn ghost" id="exportJson">Export</button>
+        <button class="btn ghost" id="importJson">Import</button>
+        <input type="file" id="importFile" accept="application/json" style="display:none"/>
+      </div>
+      <div class="tiny muted">Autosaves in your browser.</div>
+    </section>
+  </div>
+
+  <div class="col">
+    <section class="card">
+      <h2>Preview</h2>
+      <div class="previewBox">
+        <div id="aoInline" class="aoWin">Add items to see the live preview.</div>
+        <div id="indexHint" class="indexHint">This is the Index. Use Next to preview category pages with items.</div>
+      </div>
+      <div class="pager">
+        <button class="btn ghost" id="prevPage">‹ Prev</button>
+        <span id="pageIndicator" class="muted">Page 1</span>
+        <button class="btn ghost" id="nextPage">Next ›</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Generated Links</h2>
+      <div class="hint tiny" style="margin-bottom:8px">Each page = one link. Copy all and paste into AO.</div>
+      <textarea id="output" class="mono" readonly placeholder="Add items and click Build All Pages"></textarea>
+      <div class="row">
+        <button class="btn primary" id="buildAll">Build All Pages</button>
+        <button class="btn" id="copyAll">Copy All</button>
+      </div>
+      <div id="msg" class="success" style="display:none">Copied!</div>
+      <div id="warn" class="error" style="display:none"></div>
+    </section>
+  </div>
+
+  <div class="col">
+    <section class="card">
+      <h2>Shop Items</h2>
+      <button class="btn success" id="addItem" style="width:100%;margin-bottom:8px">+ Add New Item</button>
+      <div id="items" class="list"></div>
+    </section>
+  </div>
+</div>
+
+<script>
+(function(){
+  const LOCAL_PORT = 8797;
+  const LOCAL_ENDPOINT = `http://127.0.0.1:${LOCAL_PORT}/auno`;
+
+  const $ = s=>document.querySelector(s);
+  const itemsEl = $('#items');
+  const pagesEl = $('#pages');
+  const outputEl = $('#output');
+  const warnEl = $('#warn');
+  const msgEl = $('#msg');
+  const aoInline = $('#aoInline');
+  const indexHint = $('#indexHint');
+
+  let model = {
+    shopTitle: 'My Shop',
+    titleColor: 'AOYellow',
+    headerText: '',
+    footerText: '',
+    groupByCat: false,
+    itemsPerPage: 5,
+    prevLabel: '« Previous',
+    nextLabel: 'Next »',
+    items: [],
+    staticPages: [] // {id,title,body}
+  };
+
+  let currentPreviewPage = 0;
+  const persistKey = 'ao-shop-builder-v8'; // Incremented version
+
+  load();
+  syncInputs();
+  renderPages();
+  renderItems();
+  updatePreview();
+
+  // Settings inputs
+  $('#shopTitle').oninput = e=>{ model.shopTitle=e.target.value; save(); updatePreview(); };
+  $('#titleColor').onchange = e=>{ model.titleColor=e.target.value; save(); updatePreview(); };
+  $('#headerText').oninput = e=>{ model.headerText=e.target.value; save(); updatePreview(); };
+  $('#footerText').oninput = e=>{ model.footerText=e.target.value; save(); updatePreview(); };
+  $('#itemsPerPage').oninput = e=>{ model.itemsPerPage=Math.max(1,parseInt(e.target.value)||5); save(); updatePreview(); };
+  $('#prevLabel').oninput = e=>{ model.prevLabel=e.target.value; save(); updatePreview(); };
+  $('#nextLabel').oninput = e=>{ model.nextLabel=e.target.value; save(); updatePreview(); };
+  $('#groupByCat').onchange = e=>{ model.groupByCat=e.target.checked; save(); updatePreview(); };
+
+  // Static pages
+  $('#addPage').onclick = ()=>{
+    const id = 'page_' + Math.random().toString(36).slice(2,8);
+    model.staticPages.push({id, title:'New Page', body:'Describe this page...'});
+    save(); renderPages(); updatePreview();
+  };
+
+  function renderPages(){
+    pagesEl.innerHTML = '';
+    model.staticPages.forEach((p, idx)=>{
+      const row = div('item'); row.style.padding='8px';
+      const hdr = div('hdr');
+      const left = div('row');
+      const titleInput = input(p.title, v=>{ p.title=v; save(); renderPages(); updatePreview(); }); titleInput.placeholder='Page Title'; titleInput.style.width='150px';
+      left.append(span('tag','Page'), titleInput);
+      
+      const actions = div('actions');
+      actions.append(btn('↑', ()=>{ if(idx>0){ const tmp=model.staticPages[idx-1]; model.staticPages[idx-1]=model.staticPages[idx]; model.staticPages[idx]=tmp; save(); renderPages(); updatePreview(); }}),
+                     btn('↓', ()=>{ if(idx<model.staticPages.length-1){ const tmp=model.staticPages[idx+1]; model.staticPages[idx+1]=model.staticPages[idx]; model.staticPages[idx]=tmp; save(); renderPages(); updatePreview(); }}),
+                     btn('✕', ()=>{ model.staticPages.splice(idx,1); save(); renderPages(); updatePreview(); }));
+      hdr.append(left, actions);
+
+      const body = textarea(p.body, v=>{ p.body=v; save(); updatePreview(); });
+      row.append(hdr, body);
+      pagesEl.append(row);
+    });
+    renderItems(); // Re-render items to update category dropdowns
+  }
+
+  // Item management
+  $('#addItem').onclick = ()=>{
+    model.items.push({ name:'', price:'', lowId:'', highId:'', ql:'', notes:'', color:'#ffffff', icon:'', category:'' });
+    save(); renderItems(); updatePreview();
+  };
+
+  // Build & Copy
+  $('#buildAll').onclick = ()=>buildAll();
+  $('#copyAll').onclick = async()=>{
+    const txt = outputEl.value.trim();
+    if(!txt) return;
+    try{ await navigator.clipboard.writeText(txt); show(msgEl,'Copied all pages!'); }
+    catch{ show(warnEl,'Clipboard blocked by browser'); }
+  };
+
+  // Preview navigation
+  $('#prevPage').onclick = ()=>{ if(currentPreviewPage>0){ currentPreviewPage--; updatePreview(); }};
+  $('#nextPage').onclick = ()=>{
+    const totalPages = buildPages().length || 1;
+    if(currentPreviewPage < totalPages-1){ currentPreviewPage++; updatePreview(); }
+  };
+
+  // Import/Export
+  $('#exportJson').onclick = ()=>{
+    const blob = new Blob([JSON.stringify(model,null,2)],{type:'application/json'});
+    const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='ao-shop.json'; a.click(); URL.revokeObjectURL(a.href);
+  };
+  $('#importJson').onclick = ()=>$('#importFile').click();
+  $('#importFile').onchange = async e=>{
+    const f=e.target.files[0]; if(!f) return;
+    try{ model=JSON.parse(await f.text()); save(); syncInputs(); renderPages(); renderItems(); updatePreview(); }
+    catch{ show(warnEl,'Invalid JSON'); }
+    e.target.value='';
+  };
+
+  function syncInputs(){
+    $('#shopTitle').value = model.shopTitle || '';
+    $('#titleColor').value = model.titleColor || 'AOYellow';
+    $('#headerText').value = model.headerText || '';
+    $('#footerText').value = model.footerText || '';
+    $('#itemsPerPage').value = model.itemsPerPage || 5;
+    $('#prevLabel').value = model.prevLabel || '« Previous';
+    $('#nextLabel').value = model.nextLabel || 'Next »';
+    $('#groupByCat').checked = !!model.groupByCat;
+  }
+
+  function renderItems(){
+    itemsEl.innerHTML='';
+    for(let i=0; i<model.items.length; i++){
+      const itm = model.items[i];
+      const el = div('item');
+
+      const hdr = div('hdr');
+      const tag = span('tag', `Item ${i+1}`);
+      const actions = div('actions');
+      actions.append(btn('↑',()=>{ if(i>0) swapItems(i,i-1); }),
+                     btn('↓',()=>{ if(i<model.items.length-1) swapItems(i,i+1); }),
+                     btn('✕',()=>{ model.items.splice(i,1); save(); renderItems(); updatePreview(); }));
+      hdr.append(tag, actions);
+
+      const pasteRow = div('pasteRow');
+      const pasteInput = document.createElement('input');
+      pasteInput.className='pasteBox';
+      pasteInput.placeholder='Paste Auno URL or itemref (press Enter)';
+      const parseBtn = btn('Parse', async ()=>{ await doParse(); });
+      
+      const nameInputEl = input(itm.name, v=>{ itm.name=v; save(); updatePreview(); });
+      const nameField = field('Item Name', nameInputEl);
+      
+      // --- Category Dropdown ---
+      const catSelect = document.createElement('select');
+      const optDefault = document.createElement('option');
+      optDefault.value = ''; optDefault.textContent = 'Uncategorized';
+      catSelect.append(optDefault);
+      model.staticPages.forEach(p=>{
+        const opt = document.createElement('option');
+        opt.value = p.id; opt.textContent = p.title;
+        catSelect.append(opt);
+      });
+      catSelect.value = itm.category || '';
+      catSelect.onchange = e => { itm.category = e.target.value; save(); updatePreview(); };
+      const catField = field('Category Page', catSelect);
+      
+      async function doParse(){
+        const val = pasteInput.value.trim(); if(!val) return;
+        await parseAunoLink(itm, val); save(); updatePreview();
+        nameInputEl.value = itm.name || nameInputEl.value;
+        lowInput.value = itm.lowId || '';
+        highInput.value = itm.highId || '';
+        qlInput.value = itm.ql || '';
+        if (!itm.icon && itm._resolvedIcon) { itm.icon = itm._resolvedIcon; iconInput.value = itm.icon; setThumb(thumb, itm.icon); save(); updatePreview(); }
+      }
+      pasteInput.addEventListener('keydown', ev=>{ if(ev.key==='Enter'){ ev.preventDefault(); doParse(); }});
+      pasteInput.addEventListener('blur', ()=>{ if(pasteInput.value && pasteInput.value.trim()) doParse(); });
+      pasteRow.append(pasteInput, parseBtn);
+
+      // --- Collapsible Section ---
+      const details = document.createElement('details');
+      const summary = document.createElement('summary');
+      summary.textContent = 'Advanced Options';
+      const detailsContent = div('details-content');
+
+      const priceField = field('Price', input(itm.price, v=>{ itm.price=v; save(); updatePreview(); }));
+      
+      const iconField = div('field');
+      const iconLabel = document.createElement('label'); iconLabel.textContent='Item Image (preview only)';
+      const iconRow = div('thumbRow');
+      var iconInput = input(itm.icon, v=>{ itm.icon=v; save(); updatePreview(); });
+      var thumb = document.createElement('img'); thumb.className='thumb'; setThumb(thumb, itm.icon);
+      iconInput.placeholder='https://.../image.png';
+      iconInput.addEventListener('input', ()=> setThumb(thumb, iconInput.value));
+      iconRow.append(thumb, iconInput); iconField.append(iconLabel, iconRow);
+      
+      const idsRow = div('row');
+      var lowInput = input(itm.lowId, v=>{ itm.lowId=digits(v); save(); updatePreview(); }); lowInput.placeholder='Low ID'; lowInput.style.width='90px';
+      var highInput = input(itm.highId, v=>{ itm.highId=digits(v); save(); updatePreview(); }); highInput.placeholder='High ID'; highInput.style.width='90px';
+      var qlInput = input(itm.ql, v=>{ itm.ql=digits(v); save(); updatePreview(); }); qlInput.placeholder='QL'; qlInput.style.width='70px';
+      idsRow.append(lowInput, highInput, qlInput);
+      const idsField = field('Item IDs', idsRow);
+
+      const colorField = div('field');
+      const colorLabel = document.createElement('label'); colorLabel.textContent='Item Color';
+      const colorPicker = div('colorPicker');
+      [{name:'Yellow',value:'AOYellow'},{name:'Green',value:'#00ff00'},{name:'Orange',value:'#ff6600'},
+       {name:'Red',value:'#ff0000'},{name:'Cyan',value:'#00ffff'},{name:'Purple',value:'#9966ff'},
+       {name:'White',value:'#ffffff'},{name:'Gray',value:'#888888'}].forEach(c=>{
+        const b = btn(c.name, ()=>{ itm.color=c.value; save(); updatePreview(); renderItems(); });
+        b.className='colorBtn'; b.style.color=c.value;
+        if(itm.color === c.value) b.classList.add('selected');
+        colorPicker.append(b);
+      });
+      colorField.append(colorLabel, colorPicker);
+
+      const notesField = field('Notes (optional)', textarea(itm.notes, v=>{ itm.notes=v; save(); updatePreview(); }));
+      
+      detailsContent.append(priceField, iconField, idsField, colorField, notesField);
+      details.append(summary, detailsContent);
+
+      el.append(hdr, pasteRow, nameField, catField, details);
+      itemsEl.append(el);
+    }
+  }
+
+  function updatePreview(){
+    const pages = buildPages();
+    const totalPages = pages.length || 1;
+    currentPreviewPage = Math.min(Math.max(0, currentPreviewPage), totalPages - 1);
+
+    if(pages.length === 0){
+      aoInline.innerHTML = 'Add items to see the live preview.';
+      $('#pageIndicator').textContent = 'No pages';
+      indexHint.style.display = 'none';
+      return;
+    }
+    const currentPage = pages[currentPreviewPage];
+    const main = currentPage[0];
+    aoInline.innerHTML = main.content;
+    indexHint.style.display = (model.groupByCat && currentPreviewPage === 0) ? 'block' : 'none';
+    $('#pageIndicator').textContent = `Page ${currentPreviewPage + 1} of ${totalPages}`;
+  }
+
+  function buildAll(){
+    const pages = buildPages();
+    if(pages.length === 0){ show(warnEl, 'Add items first'); return; }
+    let output = '';
+    pages.forEach((pageLinks, pageNum)=>{
+      const pageTitle = (pageLinks[0] && pageLinks[0].pageTitle) ? pageLinks[0].pageTitle : `Page ${pageNum + 1}`;
+      output += `\n--- ${pageTitle} ---\n`;
+      pageLinks.forEach(link=>{
+        const flat = oneLine(toSingleQuoted(link.content));
+        output += `<a href="text://${flat}">${escapeText(link.label)}</a>\n`;
+      });
+    });
+    outputEl.value = output.trim(); show(msgEl, 'Built all pages!');
+  }
+
+  function buildPages(){
+    if(!model.groupByCat){
+      return buildSimplePages(model.items);
+    }
+    
+    const itemMap = {}; // pageId -> [items]
+    const uncategorized = [];
+    for(const it of model.items){
+      const catId = it.category;
+      if(catId && model.staticPages.some(p=>p.id === catId)){
+        if(!itemMap[catId]) itemMap[catId] = [];
+        itemMap[catId].push(it);
+      } else {
+        uncategorized.push(it);
+      }
+    }
+    if (uncategorized.length > 0) {
+        itemMap['uncategorized'] = uncategorized;
+    }
+    
+    const orderedPages = model.staticPages.filter(p => itemMap[p.id]);
+    if (itemMap['uncategorized']) {
+        orderedPages.push({id: 'uncategorized', title: 'Uncategorized', body: 'Items without a category.'});
+    }
+
+    const perPage = Math.max(1, model.itemsPerPage);
+    const pages = [];
+    const catFirstPageContent = {}; 
+
+    for(const page of orderedPages){
+      const arr = itemMap[page.id];
+      const total = Math.ceil(arr.length / perPage) || 1;
+      for(let i=0;i<total;i++){
+        const slice = arr.slice(i*perPage, i*perPage+perPage);
+        const html = buildShopPage(slice, i, total, page.title);
+        if(i===0){ catFirstPageContent[page.id] = html; }
+        const pageTitle = `${page.title}${total>1?` (p${i+1}/${total})`:''}`;
+        const links = [{ label: pageTitle, content: html, pageTitle: pageTitle }];
+        links.push({ label: '« Index', content: '__INDEX__', pageTitle: pageTitle });
+        if(i>0){
+          const prevHtml = buildShopPage(arr.slice((i-1)*perPage, i*perPage), i-1, total, page.title);
+          links.push({ label: model.prevLabel, content: prevHtml, pageTitle: pageTitle });
+        }
+        if(i<total-1){
+          const nextHtml = buildShopPage(arr.slice((i+1)*perPage, (i+1)*perPage+perPage), i+1, total, page.title);
+          links.push({ label: model.nextLabel, content: nextHtml, pageTitle: pageTitle });
+        }
+        pages.push(links);
+      }
+    }
+
+    // Static pages that have no items linked to them
+    const unlinkedStaticPages = model.staticPages.filter(p => !itemMap[p.id]);
+    const staticPageLinks = [];
+    for(const pg of unlinkedStaticPages){
+        const html = buildStaticPage(pg);
+        const links = [{ label: pg.title, content: html, pageTitle: pg.title }];
+        links.push({ label: '« Index', content: '__INDEX__', pageTitle: pg.title });
+        pages.push(links);
+        staticPageLinks.push({title: pg.title, content: html});
+    }
+
+    // Build Index content
+    let indexHtml='';
+    const color = sanitizeColor(model.titleColor || 'AOYellow');
+    indexHtml += `<font color='${color}'><b>${escapeText(model.shopTitle || 'Shop')}</b></font><br>`;
+    if(model.headerText){ indexHtml += escapeText(model.headerText) + '<br>'; }
+    if(orderedPages.length){
+      indexHtml += '<br><b>Categories</b><br>';
+      for(const page of orderedPages){
+        const target = oneLine(toSingleQuoted(catFirstPageContent[page.id] || ''));
+        indexHtml += `<a href="text://${target}">${escapeText(page.title)}</a><br>`;
+      }
+    }
+    if(staticPageLinks.length){
+      indexHtml += '<br><b>Pages</b><br>';
+      for(const s of staticPageLinks){
+        const target = oneLine(toSingleQuoted(s.content));
+        indexHtml += `<a href="text://${target}">${escapeText(s.title)}</a><br>`;
+      }
+    }
+    if(model.footerText){ indexHtml += '<br>' + escapeText(model.footerText); }
+
+    const indexLink = { label: model.shopTitle, content: indexHtml, pageTitle: 'Index' };
+    for(const pageLinks of pages){
+      for(const link of pageLinks){
+        if(link.content === '__INDEX__'){ link.content = indexHtml; }
+      }
+    }
+
+    pages.unshift([ indexLink ]);
+    return pages;
+  }
+
+  function buildSimplePages(items){
+    const perPage = Math.max(1, model.itemsPerPage);
+    const totalPages = Math.ceil(items.length / perPage) || 1;
+    const pages = [];
+    for(let pageNum = 0; pageNum < totalPages; pageNum++){
+      const start = pageNum * perPage;
+      const end = Math.min(start + perPage, items.length);
+      const pageItems = items.slice(start, end);
+      const pageLinks = [];
+      const pageTitle = `${model.shopTitle}${totalPages>1?` (p${pageNum+1}/${totalPages})`:''}`;
+      const mainContent = buildShopPage(pageItems, pageNum, totalPages, null);
+      pageLinks.push({ label: pageTitle, content: mainContent, pageTitle: pageTitle });
+      if(pageNum > 0){
+        const prevContent = buildShopPage(items.slice((pageNum-1)*perPage, pageNum*perPage), pageNum-1, totalPages, null);
+        pageLinks.push({ label: model.prevLabel, content: prevContent, pageTitle: pageTitle });
+      }
+      if(pageNum < totalPages - 1){
+        const nextContent = buildShopPage(items.slice((pageNum+1)*perPage, (pageNum+1)*perPage + perPage), pageNum+1, totalPages, null);
+        pageLinks.push({ label: model.nextLabel, content: nextContent, pageTitle: pageTitle });
+      }
+      pages.push(pageLinks);
+    }
+    return pages;
+  }
+
+  function buildStaticPage(pg){
+    let html='';
+    const color = sanitizeColor(model.titleColor || 'AOYellow');
+    html += `<font color='${color}'><b>${escapeText(pg.title || 'Page')}</b></font><br>`;
+    html += (pg.body ? escapeText(pg.body) : '') + '<br>';
+    if(model.footerText){ html += '<br>' + escapeText(model.footerText); }
+    return html;
+  }
+
+  function buildShopPage(items, pageNum, totalPages, cat){
+    let html = '';
+    const header = cat ? `${model.shopTitle || 'Shop'} — ${cat}` : (model.shopTitle || 'Shop');
+    const color = sanitizeColor(model.titleColor || 'AOYellow');
+    html += `<font color='${color}'><b>${escapeText(header)}</b></font><br>`;
+    if(model.headerText && !cat){ html += escapeText(model.headerText) + '<br>'; }
+    html += '<br>';
+    items.forEach(itm=>{
+      const itemColor = sanitizeColor(itm.color || '#ffffff');
+      if(itm.icon){ html += `<img src='${escapeAttr(itm.icon)}' width='24' height='24' style='vertical-align:middle;margin-right:6px' onerror="this.style.display='none'">`; }
+      html += `<font color='${itemColor}'>`;
+      if(itm.lowId && itm.highId && itm.ql){
+        html += `<a href='itemref://${digits(itm.lowId)}/${digits(itm.highId)}/${digits(itm.ql)}'>${escapeText(itm.name || 'Item')}</a>`;
+      } else {
+        html += escapeText(itm.name || 'Item');
+      }
+      if(itm.price){ html += ` - ${escapeText(itm.price)}`; }
+      html += `</font>`;
+      if(itm.notes){ html += `<br><font color='#888888'>${escapeText(itm.notes)}</font>`; }
+      html += '<br>';
+    });
+    if(model.footerText){ html += '<br>' + escapeText(model.footerText); }
+    if(totalPages > 1){ html += `<br><br><font color='#666666'>Page ${pageNum + 1} of ${totalPages}</font>`; }
+    return html;
+  }
+
+  // ---------- Minimal info resolvers ----------
+  async function resolveAunoMinimal_via_local(itm) {
+    const id = (itm.highId || "").trim(); if (!id) return false;
+    const url = `${LOCAL_ENDPOINT}?id=${encodeURIComponent(id)}`;
+    try {
+      const res = await fetch(url, { mode: "cors" });
+      if (!res.ok) return false;
+      const data = await res.json();
+      if (data && data.name && (!itm.name || !itm.name.trim())) itm.name = data.name;
+      if (data && data.ql && (!itm.ql || !itm.ql.trim())) itm.ql = String(data.ql);
+      if (data && data.icon) itm._resolvedIcon = data.icon;
+      return true;
+    } catch { return false; }
+  }
+  async function resolveAunoMinimal(itm) {
+    const id = (itm.highId || "").trim(); if (!id) return;
+    const urls = [ `https://r.jina.ai/http://auno.org/ao/db.php?id=${id}` ];
+    for (const url of urls) {
+      try {
+        const res = await fetch(url, { mode: 'cors' });
+        if (!res.ok) continue;
+        const html = await res.text();
+        const name = extractNameFromHTML(html);
+        if (name && (!itm.name || !itm.name.trim())) itm.name = name;
+        const icon = extractIconFromHTML(html);
+        if (icon) itm._resolvedIcon = absolutize(icon);
+        return;
+      } catch {}
+    }
+  }
+  function extractNameFromHTML(html){
+    const h1 = html.match(/<h1[^>]*>(.*?)<\/h1>/is);
+    if (h1){ return stripTags(h1[1]).trim(); }
+    const title = html.match(/<title[^>]*>(.*?)<\/title>/is);
+    if (title){ return stripTags(title[1]).replace(/\s*\|\s*auno\.org.*$/i,'').trim(); }
+    return '';
+  }
+  function extractIconFromHTML(html){
+    const imgs = Array.from(html.matchAll(/<img[^>]+src=['"]([^'"]+)['"][^>]*>/gi)).map(m=>m[1]);
+    let best = ''; let bestScore = -999;
+    for (const src of imgs){
+      const s = (src||'').toLowerCase();
+      let sc = 0;
+      if (s.includes('icon') || s.includes('/icons/')) sc += 3;
+      if (/\.(png|gif|webp|jpg|jpeg)(\?|$)/.test(s)) sc += 1;
+      if (s.includes('spacer') || s.includes('pixel') || s.includes('blank')) sc -= 3;
+      if (sc > bestScore){ bestScore = sc; best = src; }
+    }
+    return best;
+  }
+  function absolutize(src){ if (!src) return ''; if (src.startsWith('//')) return 'https:' + src; if (/^https?:\/\//i.test(src)) return src; if (!src.startsWith('/')) src = '/' + src; return 'https://auno.org' + src; }
+  function stripTags(s){ return (s||'').replace(/<[^>]+>/g,''); }
+
+  async function parseAunoLink(itm, str){
+    if(!str) return;
+    let parsed = false;
+    const idMatch = /[?&]id=(\d+)/i.exec(str);
+    if(idMatch){ itm.highId = idMatch[1]; if(!itm.lowId) itm.lowId = '0'; const qlMatch = /[?&]ql=(\d+)/i.exec(str); if(qlMatch) itm.ql = qlMatch[1]; if(!itm.ql) itm.ql = '300'; parsed = true; }
+    const ref = /itemref:\/\/(\d+)\/(\d+)\/(\d+)/i.exec(str);
+    if(ref){ itm.lowId=ref[1]; itm.highId=ref[2]; itm.ql=ref[3]; parsed=true; }
+    if(!parsed && /^\d+$/.test(str)){ itm.highId=str; if(!itm.lowId) itm.lowId='0'; if(!itm.ql) itm.ql='300'; parsed=true; }
+    if(!parsed) return;
+    const okLocal = await resolveAunoMinimal_via_local(itm);
+    if (!okLocal) { await resolveAunoMinimal(itm); }
+  }
+
+  // ---------- Helpers ----------
+  function swapItems(a,b){ const t=model.items[a]; model.items[a]=model.items[b]; model.items[b]=t; save(); renderItems(); updatePreview(); }
+  function div(c){ const d=document.createElement('div'); if(c)d.className=c; return d; }
+  function span(c,txt){ const s=document.createElement('span'); s.className=c; s.textContent=txt; return s; }
+  function btn(t,fn){ const b=document.createElement('button'); b.className='btn'; b.textContent=t; b.onclick=fn; return b; }
+  function field(label, el){ const f = div('field'); const l = document.createElement('label'); l.textContent = label; f.append(l, el); return f; }
+  function input(v,on){ const i=document.createElement('input'); i.value=v||''; i.oninput=e=>on(e.target.value); return i; }
+  function textarea(v,on){ const t=document.createElement('textarea'); t.value=v||''; t.oninput=e=>on(e.target.value); return t; }
+  function oneLine(s){ return (s||'').replace(/[\r\n]+/g,' ').replace(/\s{2,}/g,' ').trim(); }
+  function digits(s){ return (s||'').replace(/[^0-9]/g,''); }
+  function sanitizeColor(s){ return (s||'').replace(/[^#\-\w]/g,''); }
+  function escapeText(s){ return (s||'').replace(/[&<>"]/g, ch=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[ch])); }
+  function escapeAttr(s){ return (s||'').replace(/['"<>&]/g, ch=>({"'":"&#39;","\"":"&quot;","<":"&lt;",">":"&gt;","&":"&amp;"}[ch])); }
+  function toSingleQuoted(s){
+    if(!s) return '';
+    let out='';
+    for(let i=0;i<s.length;i++){
+      if(s[i]=='=' && s[i+1]=='"'){ out+="='"; i+=2; while(i<s.length && s[i]!=='"'){ out+= (s[i]==="'" ? '&#39;' : s[i]); i++; } out+="'";
+      } else { out+=s[i]; }
+    }
+    return out;
+  }
+  function setThumb(thumb, src) { if (src) { thumb.src = src; thumb.style.display = ''; } else { thumb.style.display = 'none'; thumb.src='';} }
+  function show(node,msg){ node.textContent=msg; node.style.display='block'; setTimeout(()=>node.style.display='none',2000); }
+  function save(){ try{ localStorage.setItem(persistKey, JSON.stringify(model)); }catch(_){} }
+  function load(){ try{ const raw=localStorage.getItem(persistKey); if(raw){ const obj=JSON.parse(raw); if(obj&&obj.items){ model=obj; } } }catch(_){} }
+
+})();</script>
+</body>
+</html>

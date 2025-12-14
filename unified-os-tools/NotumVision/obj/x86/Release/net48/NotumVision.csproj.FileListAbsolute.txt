@@ -1,0 +1,3 @@
+C:\Users\Administrator\source\repos\NotumVision\obj\x86\Release\net48\NotumVision.csproj.AssemblyReference.cache
+C:\Users\Administrator\source\repos\NotumVision\obj\x86\Release\net48\NotumVision.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\Administrator\source\repos\NotumVision\obj\x86\Release\net48\NotumVision.csproj.CoreCompileInputs.cache

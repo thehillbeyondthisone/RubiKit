@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <style>
+      .panel { fill: #141920; stroke: #00d9ff; stroke-width: 1.5; }
+      .bar { fill: #00d9ff; }
+      .bar-bg { fill: #1a2028; }
+      .text { fill: #00d9ff; font-size: 4px; font-family: monospace; }
+      .scan-line { stroke: #00d9ff; stroke-width: 1; opacity: 0.6; }
+
+      @keyframes scan {
+        0% { y1: 12; y2: 12; opacity: 0; }
+        10% { opacity: 0.8; }
+        90% { opacity: 0.8; }
+        100% { y1: 52; y2: 52; opacity: 0; }
+      }
+
+      @keyframes pulse {
+        0%, 100% { opacity: 0.6; }
+        50% { opacity: 1; }
+      }
+
+      @keyframes fill1 {
+        0%, 100% { width: 30; }
+        50% { width: 35; }
+      }
+
+      @keyframes fill2 {
+        0%, 100% { width: 25; }
+        50% { width: 32; }
+      }
+
+      .scanner { animation: scan 3s linear infinite; }
+      .bar { animation: pulse 2s ease-in-out infinite; }
+      .bar1 { animation: fill1 2.5s ease-in-out infinite; }
+      .bar2 { animation: fill2 3s ease-in-out infinite; }
+    </style>
+  </defs>
+
+  <!-- Main panel -->
+  <rect class="panel" x="8" y="12" width="48" height="40" rx="2"/>
+
+  <!-- HP Bar -->
+  <rect class="bar-bg" x="12" y="18" width="40" height="5" rx="1"/>
+  <rect class="bar bar1" x="12" y="18" width="30" height="5" rx="1"/>
+  <text class="text" x="14" y="21.5">HP</text>
+
+  <!-- Nano Bar -->
+  <rect class="bar-bg" x="12" y="26" width="40" height="5" rx="1"/>
+  <rect class="bar bar2" x="12" y="26" width="25" height="5" rx="1"/>
+  <text class="text" x="14" y="29.5">NANO</text>
+
+  <!-- Stats grid -->
+  <text class="text" x="14" y="37">AAO: 420</text>
+  <text class="text" x="34" y="37">AAD: 380</text>
+  <text class="text" x="14" y="42">CRIT: 650</text>
+  <text class="text" x="34" y="42">XP: 200%</text>
+
+  <!-- Scanning line -->
+  <line class="scan-line scanner" x1="12" y1="12" x2="52" y2="12"/>
+</svg>

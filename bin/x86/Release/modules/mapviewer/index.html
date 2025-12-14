@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MapViewer - Rubi-Kanavigate</title>
+  <style>
+    :root {
+      --bg-dark: #0a0e14;
+      --bg-medium: #141920;
+      --bg-light: #1f242d;
+      --text-primary: #e6e8eb;
+      --text-secondary: #a0a8b0;
+      --text-muted: #6b7280;
+      --accent: #00d9ff;
+      --accent-dim: #0088aa;
+      --border: #2a3441;
+      --success: #00ff88;
+      --warning: #ffaa00;
+      --danger: #ff3366;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg-dark);
+      color: var(--text-primary);
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    .app-container {
+      display: grid;
+      grid-template-columns: 300px 1fr;
+      grid-template-rows: 60px 1fr 40px;
+      height: 100vh;
+    }
+
+    /* Header */
+    .header {
+      grid-column: 1 / -1;
+      background: var(--bg-medium);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 20px;
+    }
+
+    .header h1 {
+      font-size: 20px;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+
+    .header-controls {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .coord-display {
+      font-family: 'Courier New', monospace;
+      font-size: 14px;
+      color: var(--text-secondary);
+      padding: 6px 12px;
+      background: var(--bg-dark);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      background: var(--bg-medium);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .sidebar-section {
+      padding: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .sidebar-section h3 {
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin-bottom: 12px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .zone-select, .input-field {
+      width: 100%;
+      padding: 8px 12px;
+      background: var(--bg-dark);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: var(--text-primary);
+      font-size: 13px;
+      outline: none;
+    }
+
+    .zone-select:focus, .input-field:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px rgba(0, 217, 255, 0.1);
+    }
+
+    .btn {
+      width: 100%;
+      padding: 8px 16px;
+      background: var(--accent-dim);
+      border: 1px solid var(--accent);
+      border-radius: 4px;
+      color: var(--text-primary);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn:hover {
+      background: var(--accent);
+      box-shadow: 0 0 12px rgba(0, 217, 255, 0.4);
+    }
+
+    .waypoints-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+    }
+
+    .waypoint-item {
+      padding: 10px;
+      background: var(--bg-light);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      margin-bottom: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .waypoint-item:hover {
+      border-color: var(--accent);
+      transform: translateX(4px);
+    }
+
+    .waypoint-name {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 4px;
+    }
+
+    .waypoint-coords {
+      font-size: 11px;
+      font-family: 'Courier New', monospace;
+      color: var(--text-secondary);
+    }
+
+    .waypoint-delete {
+      float: right;
+      color: var(--danger);
+      font-size: 16px;
+      cursor: pointer;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+
+    .waypoint-item:hover .waypoint-delete {
+      opacity: 1;
+    }
+
+    /* Map Canvas */
+    .map-container {
+      position: relative;
+      background: var(--bg-dark);
+      overflow: hidden;
+    }
+
+    .map-canvas {
+      width: 100%;
+      height: 100%;
+      background:
+        linear-gradient(0deg, var(--border) 1px, transparent 1px),
+        linear-gradient(90deg, var(--border) 1px, transparent 1px);
+      background-size: 50px 50px;
+      cursor: crosshair;
+    }
+
+    .marker {
+      position: absolute;
+      width: 24px;
+      height: 24px;
+      background: var(--accent);
+      border: 2px solid var(--bg-dark);
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      cursor: pointer;
+      transition: all 0.2s;
+      box-shadow: 0 0 12px rgba(0, 217, 255, 0.6);
+      animation: pulse 2s infinite;
+    }
+
+    .marker:hover {
+      transform: translate(-50%, -50%) scale(1.3);
+      box-shadow: 0 0 20px rgba(0, 217, 255, 0.9);
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.6; }
+    }
+
+    .marker-label {
+      position: absolute;
+      top: -30px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--bg-medium);
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      white-space: nowrap;
+      border: 1px solid var(--border);
+      opacity: 0;
+      transition: opacity 0.2s;
+      pointer-events: none;
+    }
+
+    .marker:hover .marker-label {
+      opacity: 1;
+    }
+
+    /* Footer */
+    .footer {
+      grid-column: 1 / -1;
+      background: var(--bg-medium);
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 20px;
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    .zoom-controls {
+      display: flex;
+      gap: 8px;
+    }
+
+    .zoom-btn {
+      padding: 4px 12px;
+      background: var(--bg-dark);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: var(--text-primary);
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.2s;
+    }
+
+    .zoom-btn:hover {
+      border-color: var(--accent);
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: var(--bg-dark);
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--accent);
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <!-- Header -->
+    <header class="header">
+      <h1>⚲ MapViewer</h1>
+      <div class="header-controls">
+        <div class="coord-display" id="currentCoords">X: 0, Y: 0</div>
+      </div>
+    </header>
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-section">
+        <h3>Zone</h3>
+        <select class="zone-select" id="zoneSelect">
+          <option value="world">World Map</option>
+          <option value="omni-1">Omni-1 Entertainment</option>
+          <option value="old-athens">Old Athens</option>
+          <option value="newland">Newland City</option>
+          <option value="borealis">Borealis</option>
+          <option value="custom">Custom Zone</option>
+        </select>
+      </div>
+
+      <div class="sidebar-section">
+        <h3>Add Waypoint</h3>
+        <input type="text" class="input-field" id="waypointName" placeholder="Waypoint name" style="margin-bottom: 8px;">
+        <input type="number" class="input-field" id="waypointX" placeholder="X coordinate" style="margin-bottom: 8px;">
+        <input type="number" class="input-field" id="waypointY" placeholder="Y coordinate" style="margin-bottom: 12px;">
+        <button class="btn" id="addWaypoint">Add Waypoint</button>
+      </div>
+
+      <div class="waypoints-list" id="waypointsList">
+        <!-- Waypoints will be added here -->
+      </div>
+    </aside>
+
+    <!-- Map -->
+    <main class="map-container" id="mapContainer">
+      <div class="map-canvas" id="mapCanvas">
+        <!-- Markers will be added here -->
+      </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <span id="statusText">Ready</span>
+      <div class="zoom-controls">
+        <button class="zoom-btn" id="zoomOut">−</button>
+        <span id="zoomLevel">100%</span>
+        <button class="zoom-btn" id="zoomIn">+</button>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    // State
+    const state = {
+      waypoints: [],
+      currentZone: 'world',
+      zoom: 1,
+      mouseX: 0,
+      mouseY: 0
+    };
+
+    // DOM elements
+    const elements = {
+      mapCanvas: document.getElementById('mapCanvas'),
+      mapContainer: document.getElementById('mapContainer'),
+      waypointsList: document.getElementById('waypointsList'),
+      zoneSelect: document.getElementById('zoneSelect'),
+      waypointName: document.getElementById('waypointName'),
+      waypointX: document.getElementById('waypointX'),
+      waypointY: document.getElementById('waypointY'),
+      addWaypoint: document.getElementById('addWaypoint'),
+      currentCoords: document.getElementById('currentCoords'),
+      statusText: document.getElementById('statusText'),
+      zoomIn: document.getElementById('zoomIn'),
+      zoomOut: document.getElementById('zoomOut'),
+      zoomLevel: document.getElementById('zoomLevel')
+    };
+
+    // Load waypoints from localStorage
+    function loadWaypoints() {
+      const saved = localStorage.getItem('rubikit-map-waypoints');
+      if (saved) {
+        state.waypoints = JSON.parse(saved);
+        renderWaypoints();
+      }
+    }
+
+    // Save waypoints to localStorage
+    function saveWaypoints() {
+      localStorage.setItem('rubikit-map-waypoints', JSON.stringify(state.waypoints));
+    }
+
+    // Add waypoint
+    function addWaypoint(name, x, y) {
+      if (!name || x === '' || y === '') return;
+
+      const waypoint = {
+        id: Date.now(),
+        name: name,
+        x: parseInt(x),
+        y: parseInt(y),
+        zone: state.currentZone
+      };
+
+      state.waypoints.push(waypoint);
+      saveWaypoints();
+      renderWaypoints();
+
+      // Clear inputs
+      elements.waypointName.value = '';
+      elements.waypointX.value = '';
+      elements.waypointY.value = '';
+
+      elements.statusText.textContent = `Added waypoint: ${name}`;
+    }
+
+    // Delete waypoint
+    function deleteWaypoint(id) {
+      state.waypoints = state.waypoints.filter(w => w.id !== id);
+      saveWaypoints();
+      renderWaypoints();
+      elements.statusText.textContent = 'Waypoint deleted';
+    }
+
+    // Render waypoints
+    function renderWaypoints() {
+      // Clear list
+      elements.waypointsList.innerHTML = '';
+
+      // Filter by current zone
+      const zoneWaypoints = state.waypoints.filter(w => w.zone === state.currentZone);
+
+      if (zoneWaypoints.length === 0) {
+        elements.waypointsList.innerHTML = '<div style="color: var(--text-muted); font-size: 12px; text-align: center; padding: 20px;">No waypoints for this zone</div>';
+        return;
+      }
+
+      // Render each waypoint
+      zoneWaypoints.forEach(waypoint => {
+        const item = document.createElement('div');
+        item.className = 'waypoint-item';
+        item.innerHTML = `
+          <div class="waypoint-name">${waypoint.name}</div>
+          <div class="waypoint-coords">X: ${waypoint.x}, Y: ${waypoint.y}</div>
+          <span class="waypoint-delete" data-id="${waypoint.id}">×</span>
+        `;
+
+        item.addEventListener('click', (e) => {
+          if (!e.target.classList.contains('waypoint-delete')) {
+            focusWaypoint(waypoint);
+          }
+        });
+
+        item.querySelector('.waypoint-delete').addEventListener('click', (e) => {
+          e.stopPropagation();
+          deleteWaypoint(waypoint.id);
+        });
+
+        elements.waypointsList.appendChild(item);
+      });
+
+      // Render markers on map
+      renderMarkers();
+    }
+
+    // Render markers on map
+    function renderMarkers() {
+      // Remove existing markers
+      document.querySelectorAll('.marker').forEach(m => m.remove());
+
+      // Filter by current zone
+      const zoneWaypoints = state.waypoints.filter(w => w.zone === state.currentZone);
+
+      // Add markers
+      zoneWaypoints.forEach(waypoint => {
+        const marker = document.createElement('div');
+        marker.className = 'marker';
+        marker.style.left = `${waypoint.x}px`;
+        marker.style.top = `${waypoint.y}px`;
+        marker.innerHTML = `<div class="marker-label">${waypoint.name}</div>`;
+
+        marker.addEventListener('click', () => focusWaypoint(waypoint));
+
+        elements.mapCanvas.appendChild(marker);
+      });
+    }
+
+    // Focus on waypoint
+    function focusWaypoint(waypoint) {
+      elements.mapContainer.scrollTo({
+        left: waypoint.x - elements.mapContainer.clientWidth / 2,
+        top: waypoint.y - elements.mapContainer.clientHeight / 2,
+        behavior: 'smooth'
+      });
+      elements.statusText.textContent = `Focused: ${waypoint.name}`;
+    }
+
+    // Track mouse position
+    elements.mapCanvas.addEventListener('mousemove', (e) => {
+      const rect = elements.mapCanvas.getBoundingClientRect();
+      state.mouseX = Math.round(e.clientX - rect.left + elements.mapContainer.scrollLeft);
+      state.mouseY = Math.round(e.clientY - rect.top + elements.mapContainer.scrollTop);
+      elements.currentCoords.textContent = `X: ${state.mouseX}, Y: ${state.mouseY}`;
+    });
+
+    // Click to add waypoint at position
+    elements.mapCanvas.addEventListener('click', (e) => {
+      if (e.target === elements.mapCanvas) {
+        elements.waypointX.value = state.mouseX;
+        elements.waypointY.value = state.mouseY;
+        elements.waypointName.focus();
+      }
+    });
+
+    // Event listeners
+    elements.addWaypoint.addEventListener('click', () => {
+      addWaypoint(
+        elements.waypointName.value.trim(),
+        elements.waypointX.value,
+        elements.waypointY.value
+      );
+    });
+
+    elements.waypointName.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        addWaypoint(
+          elements.waypointName.value.trim(),
+          elements.waypointX.value,
+          elements.waypointY.value
+        );
+      }
+    });
+
+    elements.zoneSelect.addEventListener('change', (e) => {
+      state.currentZone = e.target.value;
+      renderWaypoints();
+      elements.statusText.textContent = `Switched to: ${e.target.options[e.target.selectedIndex].text}`;
+    });
+
+    elements.zoomIn.addEventListener('click', () => {
+      state.zoom = Math.min(state.zoom * 1.2, 3);
+      updateZoom();
+    });
+
+    elements.zoomOut.addEventListener('click', () => {
+      state.zoom = Math.max(state.zoom / 1.2, 0.5);
+      updateZoom();
+    });
+
+    function updateZoom() {
+      elements.mapCanvas.style.transform = `scale(${state.zoom})`;
+      elements.mapCanvas.style.transformOrigin = 'top left';
+      elements.zoomLevel.textContent = `${Math.round(state.zoom * 100)}%`;
+    }
+
+    // Initialize
+    loadWaypoints();
+    elements.statusText.textContent = 'Ready - Click map to set coordinates';
+  </script>
+</body>
+</html>
