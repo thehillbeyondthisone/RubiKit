@@ -33,8 +33,8 @@ namespace RubiKit
             {
                 _kernel = new Kernel(pluginDir ?? "");
                 _kernel.Start();
-                Chat.WriteLine("<color=#4da3ff>[RubiKit 2.1]</color> API on 127.0.0.1:8777  |  /rubi to open NotumHUD");
-                Chat.RegisterCommand("rubi", (cmd, a, w) => _kernel.OpenStatus());
+                Chat.WriteLine("<color=#4da3ff>[RubiKit 2.1]</color> API on 127.0.0.1:8777  |  /rkit boot to open dashboard");
+                Chat.RegisterCommand("rkit", (cmd, args, w) => _kernel.HandleRkitCommand(args));
                 Chat.RegisterCommand("about", (cmd, a, w) => _kernel.ShowAbout());
             }
             catch (Exception ex)
@@ -205,11 +205,71 @@ namespace RubiKit
             GC.Collect();
         }
 
-        public void OpenStatus()
+        public void HandleRkitCommand(string args)
         {
-            var url = "http://127.0.0.1:" + Port + "/modules/notumHUD/index.html";
+            var parts = (args ?? "").Trim().Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+            var subCmd = parts.Length > 0 ? parts[0].ToLowerInvariant() : "";
+
+            switch (subCmd)
+            {
+                case "boot":
+                    OpenDashboard();
+                    break;
+                case "notum":
+                case "hud":
+                    OpenModule("notumhud");
+                    break;
+                case "llm":
+                    OpenModule("llm");
+                    break;
+                case "hydra":
+                    OpenModule("hydra");
+                    break;
+                case "xanalytics":
+                    OpenModule("xanalytics");
+                    break;
+                case "shop":
+                case "shopmaker":
+                    OpenModule("shopmaker");
+                    break;
+                case "map":
+                case "mapviewer":
+                    OpenModule("mapviewer");
+                    break;
+                case "help":
+                default:
+                    ShowRkitHelp();
+                    break;
+            }
+        }
+
+        private void OpenDashboard()
+        {
+            var url = "http://127.0.0.1:" + Port + "/index.html";
             try { System.Diagnostics.Process.Start(url); } catch { }
-            Chat.WriteLine("[RubiKit] Opening NotumHUD: " + url);
+            Chat.WriteLine("[RubiKit] Opening dashboard: " + url);
+        }
+
+        private void OpenModule(string moduleId)
+        {
+            var url = "http://127.0.0.1:" + Port + "/modules/" + moduleId + "/index.html";
+            try { System.Diagnostics.Process.Start(url); } catch { }
+            Chat.WriteLine("[RubiKit] Opening " + moduleId + ": " + url);
+        }
+
+        private void ShowRkitHelp()
+        {
+            var sb = new StringBuilder();
+            sb.AppendLine("<color=#4da3ff>[RubiKit Commands]</color>");
+            sb.AppendLine("/rkit boot - Open main dashboard");
+            sb.AppendLine("/rkit notum - Open NotumHUD");
+            sb.AppendLine("/rkit llm - Open LLM settings");
+            sb.AppendLine("/rkit hydra - Open Hydra");
+            sb.AppendLine("/rkit xanalytics - Open Xanalytics");
+            sb.AppendLine("/rkit shop - Open ShopMaker");
+            sb.AppendLine("/rkit map - Open MapViewer");
+            sb.AppendLine("/rkit help - Show this help");
+            Chat.WriteLine(sb.ToString());
         }
 
         public void ShowAbout()
@@ -300,19 +360,25 @@ namespace RubiKit
                     ServeStaticUnder(Path.Combine(_baseDir, "modules"), path.Substring("/modules/".Length), ctx);
                     return;
                 }
-                if (path == "/" || path == "/index.html" || path == "/monitor.html")
-                {
-                    string fileName = path == "/monitor.html" ? "monitor.html" : "index.html";
-                    string fullPath = Path.Combine(_baseDir, "modules", "notumHUD", fileName);
 
-                    if (!File.Exists(fullPath) && fileName == "index.html")
+                // Serve root files (index.html, rubikit.js, rubikit.css)
+                if (path == "/" || path == "/index.html")
+                {
+                    string fullPath = Path.Combine(_baseDir, "index.html");
+                    if (File.Exists(fullPath))
                     {
-                        SendStatusPage(res);
+                        ServeStaticFile(fullPath, ctx);
                         return;
                     }
-                    else if (File.Exists(fullPath))
+                    SendStatusPage(res);
+                    return;
+                }
+                if (path == "/rubikit.js" || path == "/rubikit.css")
+                {
+                    string fullPath = Path.Combine(_baseDir, path.TrimStart('/'));
+                    if (File.Exists(fullPath))
                     {
-                        ServeStaticUnder(Path.Combine(_baseDir, "modules"), "notumHUD/" + fileName, ctx);
+                        ServeStaticFile(fullPath, ctx);
                         return;
                     }
                 }
@@ -342,7 +408,11 @@ namespace RubiKit
             res.ContentType = "text/html; charset=utf-8";
             var html = "<!doctype html><meta charset='utf-8'><title>RubiKit 2.1</title>" +
                        "<style>body{font:14px/1.4 system-ui,sans-serif;padding:18px;background:#0e1f12;color:#e9ecf1} a{color:#58a6ff;}</style>" +
-                       "<h2>RubiKit 2.1</h2><p>Online. Open <a href='/modules/notumHUD/index.html'>NotumHUD</a>.</p>";
+                       "<h2>RubiKit 2.1</h2><p>Online. Use <code>/rkit boot</code> to open the dashboard.</p>" +
+                       "<p>Modules: <a href='/modules/notumhud/index.html'>NotumHUD</a> | " +
+                       "<a href='/modules/llm/index.html'>LLM</a> | " +
+                       "<a href='/modules/hydra/index.html'>Hydra</a> | " +
+                       "<a href='/modules/xanalytics/index.html'>Xanalytics</a></p>";
             var bytes = Encoding.UTF8.GetBytes(html);
             res.OutputStream.Write(bytes, 0, bytes.Length);
         }
@@ -456,6 +526,16 @@ namespace RubiKit
                 case "misc_hide_clear": _state.ClearHiddenMisc(); res.StatusCode = 204; break;
                 default: res.StatusCode = 400; break;
             }
+        }
+
+        private void ServeStaticFile(string fullPath, HttpListenerContext ctx)
+        {
+            if (!File.Exists(fullPath))
+            {
+                SendText(ctx.Response, 404, "Not Found");
+                return;
+            }
+            SendFile(ctx.Response, fullPath, GetMime(fullPath), 200);
         }
 
         private void ServeStaticUnder(string root, string rel, HttpListenerContext ctx)
