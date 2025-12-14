@@ -27,56 +27,62 @@
       return handleCommand(cmd);
     },
     boot() {
-      handleCommand('/boot');
+      window.location.href = BOOT_PATH;
     }
   };
 
   // ===================================
   // COMMAND SYSTEM
   // ===================================
+  // Commands use /rkit prefix to avoid conflicts with game commands
+  // Special commands /boot and /rubi are standalone
   const COMMANDS = {
     '/boot': {
-      description: 'Navigate to RubiKit boot location',
+      description: 'Navigate to RubiKit index.html',
       handler: () => {
         window.location.href = BOOT_PATH;
         return `Booting to ${BOOT_PATH}...`;
       }
     },
-    '/help': {
-      description: 'Show available commands',
+    '/rubi': {
+      description: 'Navigate to RubiKit index.html',
       handler: () => {
-        const cmds = Object.entries(COMMANDS)
-          .map(([cmd, info]) => `${cmd} - ${info.description}`)
-          .join('\n');
-        console.log('Available commands:\n' + cmds);
-        return cmds;
+        window.location.href = BOOT_PATH;
+        return `Opening RubiKit...`;
       }
     },
-    '/modules': {
-      description: 'List loaded modules',
-      handler: () => {
-        const list = state.modules.map(m => `${m.id}: ${m.name}`).join('\n');
-        console.log('Loaded modules:\n' + list);
-        return list;
-      }
-    },
-    '/switch': {
-      description: 'Switch to a module by ID',
+    '/rkit': {
+      description: 'RubiKit commands (use /rkit help)',
       handler: (args) => {
-        const moduleId = args[0];
-        const mod = state.modules.find(m => m.id === moduleId);
-        if (mod) {
-          showModule(mod);
-          return `Switched to ${mod.name}`;
+        const subCmd = (args[0] || '').toLowerCase();
+
+        switch (subCmd) {
+          case 'help':
+            return `RubiKit Commands:
+/boot - Go to RubiKit index.html
+/rubi - Go to RubiKit index.html
+/rkit help - Show this help
+/rkit modules - List loaded modules
+/rkit switch <id> - Switch to module`;
+
+          case 'modules':
+            const list = state.modules.map(m => `${m.id}: ${m.name}`).join('\n');
+            console.log('Loaded modules:\n' + list);
+            return list || 'No modules loaded';
+
+          case 'switch':
+            const moduleId = args[1];
+            if (!moduleId) return 'Usage: /rkit switch <module_id>';
+            const mod = state.modules.find(m => m.id === moduleId);
+            if (mod) {
+              showModule(mod);
+              return `Switched to ${mod.name}`;
+            }
+            return `Module not found: ${moduleId}`;
+
+          default:
+            return 'Unknown subcommand. Use /rkit help';
         }
-        return `Module not found: ${moduleId}`;
-      }
-    },
-    '/reload': {
-      description: 'Reload all modules',
-      handler: () => {
-        location.reload();
-        return 'Reloading...';
       }
     }
   };
@@ -94,7 +100,7 @@
       return COMMANDS[cmd].handler(args);
     }
 
-    return `Unknown command: ${cmd}. Type /help for available commands.`;
+    return null; // Don't show error for unknown commands - let game handle them
   }
 
   // ===================================
@@ -186,7 +192,7 @@
     const cmdInput = document.createElement('div');
     cmdInput.className = 'rk-cmd-container';
     cmdInput.innerHTML = `
-      <input type="text" class="rk-cmd-input" placeholder="Type /help for commands..." id="rk-cmd">
+      <input type="text" class="rk-cmd-input" placeholder="/rkit help" id="rk-cmd">
     `;
     tabBar.appendChild(cmdInput);
 
@@ -199,7 +205,6 @@
         const result = handleCommand(cmdField.value);
         if (result) {
           console.log('[RubiKit]', result);
-          // Could show a toast notification here
         }
         cmdField.value = '';
       }
