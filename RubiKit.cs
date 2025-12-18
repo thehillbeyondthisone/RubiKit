@@ -33,7 +33,8 @@ namespace RubiKit
             {
                 _kernel = new Kernel(pluginDir ?? "");
                 _kernel.Start();
-                Chat.WriteLine("<color=#4da3ff>[RubiKit 2.1]</color> API on 127.0.0.1:8777  |  /rkit boot to open dashboard");
+                Chat.WriteLine("<color=#4da3ff>[RubiKit 2.1]</color> API on 127.0.0.1:8777  |  /rubi or /rkit boot");
+                Chat.RegisterCommand("rubi", (cmd, a, w) => _kernel.OpenDashboard());
                 Chat.RegisterCommand("rkit", (cmd, args, w) => _kernel.HandleRkitCommand(string.Join(" ", args)));
                 Chat.RegisterCommand("about", (cmd, a, w) => _kernel.ShowAbout());
             }
@@ -243,7 +244,7 @@ namespace RubiKit
             }
         }
 
-        private void OpenDashboard()
+        public void OpenDashboard()
         {
             var url = "http://127.0.0.1:" + Port + "/index.html";
             try { System.Diagnostics.Process.Start(url); } catch { }

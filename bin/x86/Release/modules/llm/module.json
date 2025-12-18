@@ -1,7 +1,0 @@
-{
-  "id": "llm",
-  "name": "LLM",
-  "icon": "brain",
-  "path": "modules/llm/index.html",
-  "persistent": true
-}

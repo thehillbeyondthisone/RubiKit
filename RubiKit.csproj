@@ -70,4 +70,14 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+
+  <!-- Copy web files to output directory after build -->
+  <Target Name="CopyWebFiles" AfterTargets="Build">
+    <ItemGroup>
+      <WebFiles Include="index.html;rubikit.js;rubikit.css" />
+      <ModuleFiles Include="modules\**\*" />
+    </ItemGroup>
+    <Copy SourceFiles="@(WebFiles)" DestinationFolder="$(OutputPath)" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="@(ModuleFiles)" DestinationFolder="$(OutputPath)modules\%(RecursiveDir)" SkipUnchangedFiles="true" />
+  </Target>
 </Project>

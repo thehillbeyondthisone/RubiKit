@@ -1,107 +1,13 @@
-// RubiKit OS - Module & Tab System with Command Support
+// RubiKit OS - Desktop Environment
 (function() {
   const MODULES_PATH = 'modules/modules.json';
-  const BOOT_PATH = 'C:\\Users\\Administrator\\source\\repos\\RubiKit\\index.html';
 
   const state = {
     modules: [],
+    openTabs: new Map(), // moduleId -> { window, taskbarBtn }
     activeTab: null,
-    iframes: new Map(),
-    commandHistory: []
+    zIndex: 100
   };
-
-  // Expose RubiKit API globally
-  window.RubiKit = {
-    registerModule(m) {
-      if (!m || !m.id || !m.name) return;
-      state.modules.push(m);
-    },
-    getActiveModule() {
-      return state.activeTab;
-    },
-    switchTab(moduleId) {
-      const mod = state.modules.find(m => m.id === moduleId);
-      if (mod) showModule(mod);
-    },
-    executeCommand(cmd) {
-      return handleCommand(cmd);
-    },
-    boot() {
-      window.location.href = BOOT_PATH;
-    }
-  };
-
-  // ===================================
-  // COMMAND SYSTEM
-  // ===================================
-  // Commands use /rkit prefix to avoid conflicts with game commands
-  // Special commands /boot and /rubi are standalone
-  const COMMANDS = {
-    '/boot': {
-      description: 'Navigate to RubiKit index.html',
-      handler: () => {
-        window.location.href = BOOT_PATH;
-        return `Booting to ${BOOT_PATH}...`;
-      }
-    },
-    '/rubi': {
-      description: 'Navigate to RubiKit index.html',
-      handler: () => {
-        window.location.href = BOOT_PATH;
-        return `Opening RubiKit...`;
-      }
-    },
-    '/rkit': {
-      description: 'RubiKit commands (use /rkit help)',
-      handler: (args) => {
-        const subCmd = (args[0] || '').toLowerCase();
-
-        switch (subCmd) {
-          case 'help':
-            return `RubiKit Commands:
-/boot - Go to RubiKit index.html
-/rubi - Go to RubiKit index.html
-/rkit help - Show this help
-/rkit modules - List loaded modules
-/rkit switch <id> - Switch to module`;
-
-          case 'modules':
-            const list = state.modules.map(m => `${m.id}: ${m.name}`).join('\n');
-            console.log('Loaded modules:\n' + list);
-            return list || 'No modules loaded';
-
-          case 'switch':
-            const moduleId = args[1];
-            if (!moduleId) return 'Usage: /rkit switch <module_id>';
-            const mod = state.modules.find(m => m.id === moduleId);
-            if (mod) {
-              showModule(mod);
-              return `Switched to ${mod.name}`;
-            }
-            return `Module not found: ${moduleId}`;
-
-          default:
-            return 'Unknown subcommand. Use /rkit help';
-        }
-      }
-    }
-  };
-
-  function handleCommand(input) {
-    if (!input || !input.startsWith('/')) return null;
-
-    const parts = input.trim().split(/\s+/);
-    const cmd = parts[0].toLowerCase();
-    const args = parts.slice(1);
-
-    state.commandHistory.push(input);
-
-    if (COMMANDS[cmd]) {
-      return COMMANDS[cmd].handler(args);
-    }
-
-    return null; // Don't show error for unknown commands - let game handle them
-  }
 
   // ===================================
   // MODULE LOADING
@@ -110,156 +16,277 @@
     try {
       const response = await fetch(MODULES_PATH);
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
-
-      const modulesConfig = await response.json();
-
-      for (const mod of modulesConfig) {
-        state.modules.push({
-          id: mod.id,
-          name: mod.name,
-          icon: mod.icon,
-          path: mod.path,
-          persistent: mod.persistent || false
-        });
-      }
-
+      state.modules = await response.json();
       console.log(`[RubiKit] Loaded ${state.modules.length} modules`);
     } catch (err) {
       console.warn('[RubiKit] Failed to load modules.json:', err.message);
+      state.modules = [];
     }
-
-    initUI();
+    initDesktop();
   }
 
   // ===================================
-  // UI INITIALIZATION
+  // DESKTOP INITIALIZATION
   // ===================================
-  function initUI() {
-    const tabsContainer = document.getElementById('rk-tabs');
-    const viewContainer = document.getElementById('rk-view');
-
-    if (!tabsContainer || !viewContainer) {
-      console.error('[RubiKit] Missing #rk-tabs or #rk-view containers');
-      return;
-    }
-
-    // Clear existing content
-    tabsContainer.innerHTML = '';
-    viewContainer.innerHTML = '';
-
-    if (state.modules.length === 0) {
-      viewContainer.innerHTML = '<div class="rk-card rk-empty">No modules loaded. Check modules/modules.json</div>';
-      return;
-    }
-
-    // Create tab bar
-    const tabBar = document.createElement('div');
-    tabBar.className = 'rk-tab-bar';
+  function initDesktop() {
+    const desktop = document.getElementById('desktop');
 
     state.modules.forEach((mod, index) => {
-      // Create tab button
-      const tab = document.createElement('button');
-      tab.className = 'rk-tab';
-      tab.dataset.moduleId = mod.id;
-      tab.innerHTML = `<span class="rk-tab-icon">${getIcon(mod.icon)}</span><span class="rk-tab-name">${mod.name}</span>`;
-      tab.onclick = () => showModule(mod);
-      tabBar.appendChild(tab);
+      const icon = document.createElement('div');
+      icon.className = 'desktop-icon';
+      icon.dataset.moduleId = mod.id;
 
-      // Create iframe container for each module (hidden initially)
-      const frameContainer = document.createElement('div');
-      frameContainer.className = 'rk-frame-container';
-      frameContainer.id = `frame-${mod.id}`;
-      frameContainer.style.display = 'none';
-
-      const iframe = document.createElement('iframe');
-      iframe.className = 'rk-module-frame';
-      iframe.src = mod.path;
-      iframe.title = mod.name;
-      iframe.setAttribute('loading', 'lazy');
-
-      frameContainer.appendChild(iframe);
-      viewContainer.appendChild(frameContainer);
-
-      state.iframes.set(mod.id, { container: frameContainer, iframe, loaded: false });
-
-      // Show first module by default
-      if (index === 0) {
-        showModule(mod);
+      // Create icon image (use SVG if available, else emoji fallback)
+      const iconImg = document.createElement('div');
+      iconImg.className = 'icon-image';
+      if (mod.icon && mod.icon.endsWith('.svg')) {
+        iconImg.innerHTML = `<img src="${mod.icon}" alt="${mod.name}">`;
+      } else {
+        iconImg.innerHTML = getIconEmoji(mod.icon || mod.id);
       }
+
+      const iconLabel = document.createElement('span');
+      iconLabel.className = 'icon-label';
+      iconLabel.textContent = mod.name;
+
+      icon.appendChild(iconImg);
+      icon.appendChild(iconLabel);
+
+      // Position icons in a grid
+      const col = index % 4;
+      const row = Math.floor(index / 4);
+      icon.style.left = `${20 + col * 100}px`;
+      icon.style.top = `${20 + row * 100}px`;
+
+      // Double-click to open
+      icon.addEventListener('dblclick', () => openModule(mod));
+
+      desktop.appendChild(icon);
     });
 
-    // Add command input
-    const cmdInput = document.createElement('div');
-    cmdInput.className = 'rk-cmd-container';
-    cmdInput.innerHTML = `
-      <input type="text" class="rk-cmd-input" placeholder="/rkit help" id="rk-cmd">
+    // Start clock
+    updateClock();
+    setInterval(updateClock, 1000);
+  }
+
+  // ===================================
+  // WINDOW MANAGEMENT
+  // ===================================
+  function openModule(mod) {
+    // If already open, just focus it
+    if (state.openTabs.has(mod.id)) {
+      focusWindow(mod.id);
+      return;
+    }
+
+    const windowsContainer = document.getElementById('windows');
+    const taskbarTabs = document.getElementById('taskbar-tabs');
+
+    // Create window
+    const win = document.createElement('div');
+    win.className = 'window';
+    win.dataset.moduleId = mod.id;
+    win.style.zIndex = ++state.zIndex;
+
+    // Window header
+    const header = document.createElement('div');
+    header.className = 'window-header';
+    header.innerHTML = `
+      <span class="window-title">${mod.name}</span>
+      <div class="window-controls">
+        <button class="win-btn minimize" title="Minimize">_</button>
+        <button class="win-btn maximize" title="Maximize">[]</button>
+        <button class="win-btn close" title="Close">x</button>
+      </div>
     `;
-    tabBar.appendChild(cmdInput);
 
-    tabsContainer.appendChild(tabBar);
+    // Window content (iframe)
+    const content = document.createElement('div');
+    content.className = 'window-content';
+    const iframe = document.createElement('iframe');
+    iframe.src = mod.path;
+    iframe.title = mod.name;
+    content.appendChild(iframe);
 
-    // Command input handler
-    const cmdField = document.getElementById('rk-cmd');
-    cmdField.addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') {
-        const result = handleCommand(cmdField.value);
-        if (result) {
-          console.log('[RubiKit]', result);
-        }
-        cmdField.value = '';
+    win.appendChild(header);
+    win.appendChild(content);
+
+    // Position window
+    const offset = state.openTabs.size * 30;
+    win.style.left = `${50 + offset}px`;
+    win.style.top = `${50 + offset}px`;
+
+    windowsContainer.appendChild(win);
+
+    // Create taskbar button
+    const taskBtn = document.createElement('button');
+    taskBtn.className = 'taskbar-btn active';
+    taskBtn.textContent = mod.name;
+    taskBtn.dataset.moduleId = mod.id;
+    taskBtn.addEventListener('click', () => {
+      if (win.classList.contains('minimized')) {
+        win.classList.remove('minimized');
       }
+      focusWindow(mod.id);
     });
-  }
+    taskbarTabs.appendChild(taskBtn);
 
-  function showModule(mod) {
-    // Update tab states
-    document.querySelectorAll('.rk-tab').forEach(tab => {
-      tab.classList.toggle('active', tab.dataset.moduleId === mod.id);
-    });
-
-    // Hide all iframe containers, show the selected one
-    state.iframes.forEach((data, id) => {
-      data.container.style.display = id === mod.id ? 'block' : 'none';
-    });
-
+    // Store reference
+    state.openTabs.set(mod.id, { window: win, taskbarBtn: taskBtn, iframe });
     state.activeTab = mod.id;
-    console.log(`[RubiKit] Switched to: ${mod.name}`);
+
+    // Window controls
+    header.querySelector('.close').addEventListener('click', () => closeModule(mod.id));
+    header.querySelector('.minimize').addEventListener('click', () => minimizeWindow(mod.id));
+    header.querySelector('.maximize').addEventListener('click', () => maximizeWindow(mod.id));
+
+    // Make window draggable
+    makeDraggable(win, header);
+
+    // Focus on click
+    win.addEventListener('mousedown', () => focusWindow(mod.id));
+
+    // Update taskbar state
+    updateTaskbarState();
   }
 
-  function getIcon(iconName) {
+  function closeModule(moduleId) {
+    const tab = state.openTabs.get(moduleId);
+    if (!tab) return;
+
+    tab.window.remove();
+    tab.taskbarBtn.remove();
+    state.openTabs.delete(moduleId);
+
+    // Focus another window if available
+    if (state.activeTab === moduleId) {
+      const remaining = Array.from(state.openTabs.keys());
+      if (remaining.length > 0) {
+        focusWindow(remaining[remaining.length - 1]);
+      } else {
+        state.activeTab = null;
+      }
+    }
+    updateTaskbarState();
+  }
+
+  function minimizeWindow(moduleId) {
+    const tab = state.openTabs.get(moduleId);
+    if (!tab) return;
+    tab.window.classList.add('minimized');
+    tab.taskbarBtn.classList.remove('active');
+
+    // Focus another window
+    const visible = Array.from(state.openTabs.entries())
+      .filter(([id, t]) => !t.window.classList.contains('minimized'));
+    if (visible.length > 0) {
+      focusWindow(visible[visible.length - 1][0]);
+    }
+  }
+
+  function maximizeWindow(moduleId) {
+    const tab = state.openTabs.get(moduleId);
+    if (!tab) return;
+    tab.window.classList.toggle('maximized');
+  }
+
+  function focusWindow(moduleId) {
+    const tab = state.openTabs.get(moduleId);
+    if (!tab) return;
+
+    // Bring to front
+    tab.window.style.zIndex = ++state.zIndex;
+    state.activeTab = moduleId;
+
+    // Update taskbar
+    updateTaskbarState();
+  }
+
+  function updateTaskbarState() {
+    state.openTabs.forEach((tab, id) => {
+      const isActive = id === state.activeTab && !tab.window.classList.contains('minimized');
+      tab.taskbarBtn.classList.toggle('active', isActive);
+    });
+  }
+
+  // ===================================
+  // DRAGGABLE WINDOWS
+  // ===================================
+  function makeDraggable(element, handle) {
+    let offsetX, offsetY, isDragging = false;
+
+    handle.addEventListener('mousedown', (e) => {
+      if (e.target.classList.contains('win-btn')) return;
+      isDragging = true;
+      offsetX = e.clientX - element.offsetLeft;
+      offsetY = e.clientY - element.offsetTop;
+      element.classList.add('dragging');
+    });
+
+    document.addEventListener('mousemove', (e) => {
+      if (!isDragging) return;
+      element.style.left = `${e.clientX - offsetX}px`;
+      element.style.top = `${e.clientY - offsetY}px`;
+    });
+
+    document.addEventListener('mouseup', () => {
+      isDragging = false;
+      element.classList.remove('dragging');
+    });
+  }
+
+  // ===================================
+  // UTILITIES
+  // ===================================
+  function getIconEmoji(iconName) {
     const icons = {
-      chart: '📊',
-      brain: '🧠',
+      notumhud: '📊', chart: '📊',
+      llm: '🧠', brain: '🧠',
+      hydra: '🐉',
+      xanalytics: '📈',
+      shopmaker: '🛒', shop: '🛒',
+      mapviewer: '🗺️', map: '🗺️',
+      notumvision: '👁️',
       settings: '⚙️',
-      home: '🏠',
       terminal: '💻',
-      file: '📁',
-      search: '🔍',
-      user: '👤',
       default: '📦'
     };
     return icons[iconName] || icons.default;
+  }
+
+  function updateClock() {
+    const clock = document.getElementById('clock');
+    const now = new Date();
+    clock.textContent = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   }
 
   // ===================================
   // KEYBOARD SHORTCUTS
   // ===================================
   document.addEventListener('keydown', (e) => {
-    // Ctrl/Cmd + number to switch tabs
-    if ((e.ctrlKey || e.metaKey) && e.key >= '1' && e.key <= '9') {
-      const index = parseInt(e.key) - 1;
-      if (state.modules[index]) {
-        e.preventDefault();
-        showModule(state.modules[index]);
-      }
-    }
-
-    // Ctrl/Cmd + K to focus command input
-    if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+    // Alt+Tab style cycling (Ctrl+Tab)
+    if (e.ctrlKey && e.key === 'Tab') {
       e.preventDefault();
-      document.getElementById('rk-cmd')?.focus();
+      const tabs = Array.from(state.openTabs.keys());
+      if (tabs.length < 2) return;
+      const currentIndex = tabs.indexOf(state.activeTab);
+      const nextIndex = (currentIndex + 1) % tabs.length;
+      focusWindow(tabs[nextIndex]);
     }
   });
+
+  // ===================================
+  // EXPOSE API
+  // ===================================
+  window.RubiKit = {
+    openModule: (id) => {
+      const mod = state.modules.find(m => m.id === id);
+      if (mod) openModule(mod);
+    },
+    closeModule,
+    getOpenModules: () => Array.from(state.openTabs.keys()),
+    focusModule: focusWindow
+  };
 
   // ===================================
   // INIT

@@ -1,7 +1,7 @@
 {
-  "id": "notumhud",
+  "id": "notum-hud",
   "name": "NotumHUD",
-  "icon": "chart",
-  "path": "modules/notumhud/index.html",
+  "icon": "ðŸ“Š",
+  "path": "modules/notumHUD/index.html",
   "persistent": true
 }
