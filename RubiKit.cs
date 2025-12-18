@@ -34,7 +34,7 @@ namespace RubiKit
                 _kernel = new Kernel(pluginDir ?? "");
                 _kernel.Start();
                 Chat.WriteLine("<color=#4da3ff>[RubiKit 2.1]</color> API on 127.0.0.1:8777  |  /rkit boot to open dashboard");
-                Chat.RegisterCommand("rkit", (cmd, args, w) => _kernel.HandleRkitCommand(args));
+                Chat.RegisterCommand("rkit", (cmd, args, w) => _kernel.HandleRkitCommand(string.Join(" ", args)));
                 Chat.RegisterCommand("about", (cmd, a, w) => _kernel.ShowAbout());
             }
             catch (Exception ex)
@@ -385,7 +385,7 @@ namespace RubiKit
 
                 SendStatusPage(res);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 try
                 {
