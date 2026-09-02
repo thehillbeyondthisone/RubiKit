@@ -1,4 +1,5 @@
 # RubiKit 2.1 🚀
+![reactor](https://markdown-rbmk.vercel.app/api/badge?username=thehillbeyondthisone)
 
 A lightweight, local HTTP + SSE plugin that exposes real-time in-game stats for NotumHUD and other local dashboards. Built for **Anarchy Online** using C# 7.3 / .NET Framework 4.8.
 
