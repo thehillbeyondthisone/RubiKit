@@ -3,3 +3,4 @@ obj/
 *.user
 *.suo
 .vs/
+rubikit-debug.log

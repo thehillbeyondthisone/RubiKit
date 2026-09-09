@@ -25,16 +25,85 @@ using File = System.IO.File;
 
 namespace RubiKit
 {
+    // Self-contained diagnostics: nothing about this depends on the HTTP server being up,
+    // because the most important failures (Run() throwing, the port failing to bind) happen
+    // before it is. Every significant event goes to an in-memory ring buffer (exposed live at
+    // GET /api/debug once the server is running) and best-effort to rubikit-debug.log next to
+    // the DLL, so a tester with no way to run this in a live game client can still get a full
+    // picture of what happened just by copy-pasting the log file or the endpoint's JSON.
+    internal static class DebugLog
+    {
+        private sealed class Entry
+        {
+            public string Ts;
+            public string Level;
+            public string Category;
+            public string Message;
+        }
+
+        private const int MaxEntries = 500;
+        private static readonly ConcurrentQueue<Entry> _buffer = new ConcurrentQueue<Entry>();
+        private static readonly object _fileGate = new object();
+        private static string _logFilePath = "rubikit-debug.log";
+        public static readonly DateTime StartedUtc = DateTime.UtcNow;
+
+        public static void Init(string baseDir)
+        {
+            try { _logFilePath = Path.Combine(string.IsNullOrEmpty(baseDir) ? "." : baseDir, "rubikit-debug.log"); }
+            catch { /* keep default relative path */ }
+        }
+
+        public static void Info(string category, string message) => Write("INFO", category, message);
+        public static void Warn(string category, string message) => Write("WARN", category, message);
+        public static void Error(string category, string message) => Write("ERROR", category, message);
+
+        private static void Write(string level, string category, string message)
+        {
+            var entry = new Entry { Ts = DateTime.UtcNow.ToString("o"), Level = level, Category = category, Message = message ?? "" };
+            _buffer.Enqueue(entry);
+            while (_buffer.Count > MaxEntries) _buffer.TryDequeue(out _);
+
+            try
+            {
+                lock (_fileGate)
+                {
+                    File.AppendAllText(_logFilePath, $"{entry.Ts} [{level}] ({category}) {entry.Message}{Environment.NewLine}");
+                }
+            }
+            catch { /* logging must never be the thing that crashes the plugin */ }
+        }
+
+        public static string ToJson()
+        {
+            var sb = new StringBuilder();
+            sb.Append('[');
+            bool first = true;
+            foreach (var e in _buffer)
+            {
+                if (!first) sb.Append(',');
+                sb.Append($"{{\"ts\":\"{e.Ts}\",\"level\":\"{e.Level}\",\"category\":\"{e.Category}\",\"message\":\"{Escape(e.Message)}\"}}");
+                first = false;
+            }
+            sb.Append(']');
+            return sb.ToString();
+        }
+
+        private static string Escape(string s) => (s ?? "").Replace("\\", "\\\\").Replace("\"", "\\\"").Replace("\r", "").Replace("\n", " ");
+    }
+
     public class Main : AOPluginEntry
     {
         private static Kernel _kernel;
 
         public override void Run()
         {
+            DebugLog.Init(PluginDirectory);
+            DebugLog.Info("startup", "RubiKit 2.2 Run() called. PluginDirectory=" + PluginDirectory);
             try
             {
                 _kernel = new Kernel(PluginDirectory ?? "");
                 _kernel.Start();
+                DebugLog.Info("startup", "Kernel started; HTTP listening on 127.0.0.1:8777");
                 Chat.WriteLine("<color=#4da3ff>[RubiKit 2.2]</color> API on 127.0.0.1:8777  |  /rubi to open the module launcher");
                 Chat.RegisterCommand("rubi", (cmd, a, w) => _kernel.OpenStatus());
                 Chat.RegisterCommand("notum", (cmd, a, w) => _kernel.OpenModule("notumhud"));
@@ -42,6 +111,7 @@ namespace RubiKit
             }
             catch (Exception ex)
             {
+                DebugLog.Error("startup", "Run() failed: " + ex);
                 Chat.WriteLine("[RubiKit] Failed: " + ex.Message, ChatColor.Red);
             }
         }
@@ -53,12 +123,14 @@ namespace RubiKit
                 if (_kernel != null)
                 {
                     Chat.WriteLine("[RubiKit] Shutting down...");
+                    DebugLog.Info("shutdown", "Teardown() called");
                     _kernel.Dispose();
                     _kernel = null;
                 }
             }
             catch (Exception ex)
             {
+                DebugLog.Error("shutdown", "Teardown error: " + ex.Message);
                 Chat.WriteLine("[RubiKit] Teardown error: " + ex.Message, ChatColor.Yellow);
             }
             Chat.WriteLine("[RubiKit] Unloaded.");
@@ -105,6 +177,7 @@ namespace RubiKit
             }
             catch (HttpListenerException ex)
             {
+                DebugLog.Error("startup", $"HttpListener bind failed. ErrorCode={ex.ErrorCode} Message={ex.Message}");
                 if (ex.ErrorCode == 183) // ERROR_ALREADY_EXISTS
                 {
                     Chat.WriteLine($"[RubiKit] Port {Port} is already in use. This usually means:", ChatColor.Red);
@@ -260,6 +333,7 @@ namespace RubiKit
                 {
                     if (!_disposed)
                     {
+                        DebugLog.Warn("http", "HTTP loop error: " + ex.Message);
                         Chat.WriteLine("[RubiKit] HTTP error: " + ex.Message, ChatColor.Yellow);
                     }
                 }
@@ -302,6 +376,7 @@ namespace RubiKit
                 if (path == "/api/state") { SendJson(res, 200, _state.ToJson()); return; }
                 if (path == "/api/groups") { SendJson(res, 200, StatProvider.GetGroupsJson()); return; }
                 if (path == "/api/modules") { SendJson(res, 200, GetModulesJson()); return; }
+                if (path == "/api/debug") { SendJson(res, 200, GetDebugJson()); return; }
                 if (path == "/api/themes") { SendJson(res, 200, "[]"); return; }
                 if (path == "/api/cmd") { HandleCmd(req, res); return; }
                 if (path == "/health") { SendText(res, 200, "OK"); return; }
@@ -325,8 +400,9 @@ namespace RubiKit
 
                 SendStatusPage(res);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                DebugLog.Warn("http", $"Handler error on {path}: {ex.Message}");
                 try
                 {
                     SendText(res, 500, "Internal Server Error");
@@ -368,12 +444,38 @@ namespace RubiKit
                             if (!manifest.ContainsKey("entry")) manifest["entry"] = "index.html";
                             list.Add(manifest);
                         }
-                        catch { /* skip malformed module.json rather than fail the whole listing */ }
+                        catch (Exception ex)
+                        {
+                            DebugLog.Warn("modules", $"Failed to parse {manifestPath}: {ex.Message}");
+                        }
                     }
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                DebugLog.Warn("modules", "Module discovery failed: " + ex.Message);
+            }
             return new JavaScriptSerializer().Serialize(list);
+        }
+
+        // Everything a remote tester needs to hand over after a live run, since nothing here
+        // depends on being able to see the game client itself.
+        private string GetDebugJson()
+        {
+            int clientCount;
+            lock (_sseGate) clientCount = _clients.Count;
+            var sb = new StringBuilder();
+            sb.Append('{');
+            sb.Append("\"version\":\"2.2\",");
+            sb.Append($"\"startedUtc\":\"{DebugLog.StartedUtc:o}\",");
+            sb.Append($"\"uptimeSeconds\":{(int)(DateTime.UtcNow - DebugLog.StartedUtc).TotalSeconds},");
+            sb.Append($"\"port\":{Port},");
+            sb.Append($"\"sseClients\":{clientCount},");
+            sb.Append($"\"lastStatSampleUtc\":\"{_state.LastUpdatedUtc:o}\",");
+            sb.Append($"\"localPlayerAvailable\":{(StatProvider.LocalPlayerAvailable ? "true" : "false")},");
+            sb.Append("\"log\":" + DebugLog.ToJson());
+            sb.Append('}');
+            return sb.ToString();
         }
 
         private void SendStatusPage(HttpListenerResponse res)
@@ -504,7 +606,10 @@ namespace RubiKit
                         if (obj != null && obj.TryGetValue("name", out var catName) && obj.TryGetValue("category", out var catValue))
                             _state.SetCategoryOverride(catName, catValue);
                     }
-                    catch { }
+                    catch (Exception ex)
+                    {
+                        DebugLog.Warn("cmd", "set_category parse failed: " + ex.Message);
+                    }
                     res.StatusCode = 204;
                     break;
                 default: res.StatusCode = 400; break;
@@ -752,10 +857,18 @@ namespace RubiKit
 
         private StatSnapshot _lastSnapshot = new StatSnapshot();
 
+        // Volatile so /api/debug (a different thread) sees the latest value without locking.
+        public static volatile bool LocalPlayerAvailable = false;
+        private static string _lastReadError;
+        private static DateTime _lastReadErrorLogUtc = DateTime.MinValue;
+
         public StatSnapshot Read()
         {
             if (Game.IsZoning || DynelManager.LocalPlayer == null)
+            {
+                LocalPlayerAvailable = false;
                 return _lastSnapshot;
+            }
 
             try
             {
@@ -765,11 +878,20 @@ namespace RubiKit
                     snapshot.Stats[pair.Key] = DynelManager.LocalPlayer.GetStat(pair.Value);
                 }
 
+                LocalPlayerAvailable = true;
                 _lastSnapshot = snapshot;
                 return snapshot;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                // Runs every ~250ms — only log when the failure is new or it's been a while,
+                // so a persistent failure doesn't flood the log instead of explaining itself.
+                if (ex.Message != _lastReadError || (DateTime.UtcNow - _lastReadErrorLogUtc).TotalSeconds > 30)
+                {
+                    DebugLog.Warn("stats", "Stat read failed: " + ex.Message);
+                    _lastReadError = ex.Message;
+                    _lastReadErrorLogUtc = DateTime.UtcNow;
+                }
                 return _lastSnapshot;
             }
         }

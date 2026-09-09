@@ -1,5 +1,27 @@
 # History
 
+## 2026-09 — 2.2: dotnet CLI build + remote debug logging
+
+Verified the 2.2 rebuild actually compiles (previously untested — no toolchain, no AO client
+available). Installed `dotnet-sdk-8.0` and added `Microsoft.NETFramework.ReferenceAssemblies` to
+`RubiKit.csproj` (a `PrivateAssets`-only package; doesn't affect Visual Studio builds, which
+already have the real reference assemblies) so `dotnet build` can target `net48` without a
+Windows Developer Pack. Both `AnyCPU` and the real `x86` config build clean — 0 warnings, 0
+errors — and `bin\x86\Release\` comes out as the complete, ready-to-deploy plugin folder.
+
+Compiling surfaced two real bugs: `Main.Run(string)` was overriding an obsolete
+`AOPluginEntry.Run(string)` (confirmed via reflection on `AOSharp.Core.dll` — the current
+contract is a sealed `Init(string)` that sets a protected `PluginDirectory` and calls
+parameterless `Run()`; switched to that), and an unused exception variable.
+
+Also added structured diagnostics (`DebugLog`, `rubikit-debug.log`, `GET /api/debug`) since
+there's still no way to run this against a live AO client from outside a Windows desktop with
+the game installed. Every previously-silent `catch` (module.json parse failures, HTTP handler
+errors, and — most importantly — `StatProvider.Read()` failures, which used to fail completely
+silently and just serve stale data forever) now logs. This is meant to make remote debugging
+(sharing a log file or the `/api/debug` JSON with someone who can't run the game themselves)
+actually possible.
+
 ## 2026-09 — 2.2: module framework + recovered NotumHUD frontend
 
 The repo had drifted badly: `RubiKit.cs` served a hardcoded NotumHUD path, but the actual NotumHUD

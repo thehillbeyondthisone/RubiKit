@@ -125,7 +125,27 @@ Test these endpoints to verify everything is working:
 | `http://127.0.0.1:8777/health` | Returns `OK` |
 | `http://127.0.0.1:8777/api/state` | Returns JSON state data |
 | `http://127.0.0.1:8777/api/modules` | Returns JSON array of discovered modules |
+| `http://127.0.0.1:8777/api/debug` | Returns diagnostics + recent log entries (JSON) |
 | `http://127.0.0.1:8777/events` | SSE stream (use `EventSource` in browser) |
+
+---
+
+## 🩺 Debugging (including remote/no-game-access debugging)
+
+Every significant event — startup, port binding, HTTP errors, malformed `module.json` files, and
+character-stat read failures — goes to two places, neither of which depends on you being able to
+watch the game client:
+
+- **`rubikit-debug.log`**, written next to `RubiKit.dll`, starting from the moment `Run()` is
+  called (so it still captures a crash even if the HTTP server never comes up)
+- **`GET /api/debug`**, once the server *is* up — includes uptime, SSE client count, whether the
+  plugin can currently see your character (`localPlayerAvailable`), the last stat sample time,
+  and the last ~500 log entries as JSON
+
+If you're troubleshooting with someone who can't run Anarchy Online themselves, this is what to
+hand them: open `http://127.0.0.1:8777/api/debug` in a browser and copy the JSON, or attach/paste
+`rubikit-debug.log`. Between the two, a purely local failure (no live character to read, e.g.
+`localPlayerAvailable: false`) is easy to tell apart from an actual code bug.
 
 ---
 
