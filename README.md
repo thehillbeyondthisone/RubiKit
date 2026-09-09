@@ -1,7 +1,9 @@
-# RubiKit 2.1 🚀
+# RubiKit 2.2 🚀
 ![reactor](https://markdown-rbmk.vercel.app/api/badge?username=thehillbeyondthisone)
 
-A lightweight, local HTTP + SSE plugin that exposes real-time in-game stats for NotumHUD and other local dashboards. Built for **Anarchy Online** using C# 7.3 / .NET Framework 4.8.
+A lightweight, local HTTP + SSE plugin for **Anarchy Online** (C# 7.3 / .NET Framework 4.8) that exposes real-time
+in-game stats, and serves a **drop-in module framework**: any HTML/JS tool you place under `modules/` shows up in
+the launcher automatically, and survives future rebuilds/redeploys of the DLL untouched.
 
 Single DLL plugin — drop, run, open.
 
@@ -11,37 +13,39 @@ Single DLL plugin — drop, run, open.
 
 - **HTTP API** on `127.0.0.1:8777`
   - `/api/state` — Current character state (JSON)
-  - `/api/groups` — Group information (JSON)
+  - `/api/groups` — Stat group definitions (JSON)
+  - `/api/modules` — Installed modules, discovered from `modules/*/module.json` (JSON)
   - `/events` — Server-Sent Events stream
 - **In-game commands:**
-  - `/rubi` — Open main panel
-  - `/notum` — Open NotumHUD
+  - `/rubi` — Open the module launcher (`boot.html`)
+  - `/notum` — Open NotumHUD directly
   - `/about` — Plugin info
 
 ---
 
 ## 📁 Directory Layout
 
-Place this structure inside your AO plugin folder (the folder your AO plugin loader uses):
+This is what `bin\Release\` looks like after building — copy its contents straight into your AO plugin folder
+(the folder your AO plugin loader uses):
 
 ```
 YourPluginFolder/
 ├── RubiKit.dll
-├── boot.html              (optional - custom landing page)
-├── dashboard.html         (optional - fallback dashboard)
+├── boot.html              (module launcher — served at "/")
 └── modules/
     └── notumhud/
         ├── index.html
-        ├── monitor.html   (optional)
-        └── assets/
-            ├── notumhud.js
-            └── ...other files...
+        ├── script.js
+        ├── style.css
+        └── module.json    (id, name, icon, entry, description)
 ```
 
 ### Notes:
-- `http://127.0.0.1:8777/` serves `boot.html` (if present) or the status/dashboard fallback
-- `http://127.0.0.1:8777/notum` maps to `modules/notumhud/index.html`
-- Static assets must live under `modules/` so `/modules/*` resolves correctly
+- `http://127.0.0.1:8777/` serves `boot.html` if present (falls back to `dashboard.html`, then a plain status page)
+- `boot.html` fetches `/api/modules` and renders a card per module — no code changes needed to add one
+- Static assets must live under `modules/<id>/` so `/modules/<id>/*` resolves and gets auto-discovered
+- Deploy by **copying files forward**, not mirroring/wiping the destination: any module folder you dropped
+  into a deployed `modules/` directory that isn't part of this repo is left alone when you copy a new build over it
 
 ---
 
@@ -79,10 +83,36 @@ Ensure your `.csproj` includes:
 
 ## 🎮 Deployment
 
-1. Copy `RubiKit.dll` to your AO plugin directory
-2. Copy the `modules/` folder (with `notumhud/index.html` and assets) into the same plugin directory
+1. Build → `bin\Release\` now contains `RubiKit.dll`, `boot.html`, and `modules\` together
+2. Copy everything in `bin\Release\` into your AO plugin directory (copy forward — don't delete extra files
+   already there, so any modules you've dropped in manually survive the upgrade)
 3. Inject `RubiKit.dll` into a single character using your plugin loader
 4. Use `/rubi` in-game, or open `http://127.0.0.1:8777/` in your browser
+
+---
+
+## 🧩 Adding Modules
+
+Any tool can be dropped in without touching `RubiKit.cs`:
+
+1. Create `modules/<yourtool>/` next to `RubiKit.dll`
+2. Add an `index.html` (plus whatever JS/CSS it needs) — pull live stats from the existing `/api/state`,
+   `/api/groups`, `/events`, and `/api/cmd` endpoints if it needs them
+3. Add a `module.json` describing it:
+   ```json
+   {
+     "id": "yourtool",
+     "name": "Your Tool",
+     "icon": "🛠️",
+     "entry": "index.html",
+     "description": "One line about what it does."
+   }
+   ```
+4. Reload `http://127.0.0.1:8777/` — it now shows up as a card in the launcher automatically
+
+`modules/` is scanned fresh on every request to `/api/modules`, so there's nothing to restart. Because it's a
+plain folder read at runtime (not compiled into the DLL), a module survives rebuilding or upgrading RubiKit
+as long as you copy new builds forward instead of wiping the plugin folder first.
 
 ---
 
@@ -94,6 +124,7 @@ Test these endpoints to verify everything is working:
 |----------|----------------|
 | `http://127.0.0.1:8777/health` | Returns `OK` |
 | `http://127.0.0.1:8777/api/state` | Returns JSON state data |
+| `http://127.0.0.1:8777/api/modules` | Returns JSON array of discovered modules |
 | `http://127.0.0.1:8777/events` | SSE stream (use `EventSource` in browser) |
 
 ---
@@ -169,13 +200,8 @@ Make sure the AOSharp referenced DLLs used at build-time match the runtime envir
 ### Module Not Loading
 Verify that:
 - The `modules/` folder is in the same directory as `RubiKit.dll`
-- Static file paths match the directory structure exactly
-- `index.html` files exist in their expected locations
-
-1. Place the `notumHUD` folder in your AOSharp modules directory
-2. Ensure the companion plugin is running in-game
-3. Open NotumHUD from your modules menu
-4. The HUD will automatically scan for an available connection port
+- Each module folder has a valid `module.json` (check `/api/modules` for parse errors — malformed ones are skipped silently)
+- The module's `entry` file (usually `index.html`) exists at the path `module.json` points to
 
 **Not connecting?**
 - Check that the AOSharp plugin is running

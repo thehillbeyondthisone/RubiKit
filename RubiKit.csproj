@@ -69,5 +69,15 @@
     <Compile Include="RubiKit.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
+  <ItemGroup>
+    <!-- Copied next to RubiKit.dll on every build, so `bin\Release\` is the complete,
+         ready-to-deploy plugin folder — no separate manual copy of boot.html/modules. -->
+    <Content Include="boot.html">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="modules\**\*.*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

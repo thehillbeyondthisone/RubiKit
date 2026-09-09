@@ -269,7 +269,7 @@
   const setupBrowser = (data, stats) => {
     const statNames = data.all_names || Object.keys(stats);
     const statsByCategory = {};
-    for (const name of statNames) { const category = customCategories[name] || defaultSkillToCategoryMap[name] || 'misc'; if (!statsByCategory[category]) statsByCategory[category] = []; statsByCategory[category].push(name); }
+    for (const name of statNames) { const category = customCategories[name] || data.categoryOverrides?.[name] || defaultSkillToCategoryMap[name] || 'misc'; if (!statsByCategory[category]) statsByCategory[category] = []; statsByCategory[category].push(name); }
     const sortedCategories = Object.keys(statsByCategory).sort();
     sortedCategories.forEach(category => {
       const btn = document.createElement('button'); btn.textContent = category; btn.dataset.category = category; btn.addEventListener('click', () => { els.browserNav.querySelector('.active')?.classList.remove('active'); els.browserLists.querySelector('.active')?.classList.remove('active'); btn.classList.add('active'); document.getElementById(`list-${category}`)?.classList.add('active'); activeCategory = category; }); els.browserNav.appendChild(btn);

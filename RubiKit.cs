@@ -1,7 +1,8 @@
-﻿// RubiKit 2.1 — NotumHUD-ready single DLL (for notumhud.js)
+﻿// RubiKit 2.2 — module-framework single DLL (serves drop-in modules/* tools)
 // C# 7.3 AND .NET 4.8 COMPATIBLE
 // FIXED: Port conflict resolution when switching characters
-// Implements the API structure required by notumhud.js (e.g., /api/state, /api/groups)
+// Implements the API structure required by notumhud module (e.g., /api/state, /api/groups)
+// Serves any tool dropped into modules/<id>/ (with a module.json) via /api/modules + the boot.html launcher
 // Refs: AOSharp.Core, AOSharp.Common, AOSharp.Core.UI
 
 using System;
@@ -14,6 +15,7 @@ using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Web.Script.Serialization;
 using AOSharp.Common.GameData;
 using AOSharp.Core;
 using AOSharp.Core.UI;
@@ -33,8 +35,9 @@ namespace RubiKit
             {
                 _kernel = new Kernel(pluginDir ?? "");
                 _kernel.Start();
-                Chat.WriteLine("<color=#4da3ff>[RubiKit 2.1]</color> API on 127.0.0.1:8777  |  /rubi to open NotumHUD");
+                Chat.WriteLine("<color=#4da3ff>[RubiKit 2.2]</color> API on 127.0.0.1:8777  |  /rubi to open the module launcher");
                 Chat.RegisterCommand("rubi", (cmd, a, w) => _kernel.OpenStatus());
+                Chat.RegisterCommand("notum", (cmd, a, w) => _kernel.OpenModule("notumhud"));
                 Chat.RegisterCommand("about", (cmd, a, w) => _kernel.ShowAbout());
             }
             catch (Exception ex)
@@ -207,9 +210,16 @@ namespace RubiKit
 
         public void OpenStatus()
         {
-            var url = "http://127.0.0.1:" + Port + "/modules/notumHUD/index.html";
+            var url = "http://127.0.0.1:" + Port + "/";
             try { System.Diagnostics.Process.Start(url); } catch { }
-            Chat.WriteLine("[RubiKit] Opening NotumHUD: " + url);
+            Chat.WriteLine("[RubiKit] Opening launcher: " + url);
+        }
+
+        public void OpenModule(string id)
+        {
+            var url = "http://127.0.0.1:" + Port + "/modules/" + id + "/index.html";
+            try { System.Diagnostics.Process.Start(url); } catch { }
+            Chat.WriteLine("[RubiKit] Opening " + id + ": " + url);
         }
 
         public void ShowAbout()
@@ -217,7 +227,7 @@ namespace RubiKit
             var asm = Assembly.GetExecutingAssembly();
             var ver = asm?.GetName()?.Version?.ToString() ?? "n/a";
             var sb = new StringBuilder();
-            sb.AppendLine("<font color='#7ee787'>RubiKit</font> v2.1 (notumhud.js)");
+            sb.AppendLine("<font color='#7ee787'>RubiKit</font> v2.2 (module framework)");
             sb.AppendLine("Build: " + ver);
             sb.AppendLine("HTTP: http://localhost:" + Port + "/");
             Chat.WriteLine(sb.ToString());
@@ -291,6 +301,7 @@ namespace RubiKit
                 if (path == "/events") { HandleEvents(res); return; }
                 if (path == "/api/state") { SendJson(res, 200, _state.ToJson()); return; }
                 if (path == "/api/groups") { SendJson(res, 200, StatProvider.GetGroupsJson()); return; }
+                if (path == "/api/modules") { SendJson(res, 200, GetModulesJson()); return; }
                 if (path == "/api/themes") { SendJson(res, 200, "[]"); return; }
                 if (path == "/api/cmd") { HandleCmd(req, res); return; }
                 if (path == "/health") { SendText(res, 200, "OK"); return; }
@@ -300,21 +311,16 @@ namespace RubiKit
                     ServeStaticUnder(Path.Combine(_baseDir, "modules"), path.Substring("/modules/".Length), ctx);
                     return;
                 }
-                if (path == "/" || path == "/index.html" || path == "/monitor.html")
+                if (path == "/" || path == "/index.html")
                 {
-                    string fileName = path == "/monitor.html" ? "monitor.html" : "index.html";
-                    string fullPath = Path.Combine(_baseDir, "modules", "notumHUD", fileName);
-
-                    if (!File.Exists(fullPath) && fileName == "index.html")
-                    {
-                        SendStatusPage(res);
-                        return;
-                    }
-                    else if (File.Exists(fullPath))
-                    {
-                        ServeStaticUnder(Path.Combine(_baseDir, "modules"), "notumHUD/" + fileName, ctx);
-                        return;
-                    }
+                    // Documented drop-in overrides: a plugin author can place boot.html (or
+                    // dashboard.html) next to RubiKit.dll to fully replace the launcher.
+                    string bootPath = Path.Combine(_baseDir, "boot.html");
+                    string dashPath = Path.Combine(_baseDir, "dashboard.html");
+                    if (File.Exists(bootPath)) { SendFile(res, bootPath, "text/html; charset=utf-8", 200); return; }
+                    if (File.Exists(dashPath)) { SendFile(res, dashPath, "text/html; charset=utf-8", 200); return; }
+                    SendStatusPage(res);
+                    return;
                 }
 
                 SendStatusPage(res);
@@ -336,13 +342,48 @@ namespace RubiKit
             }
         }
 
+        // Drop-in module discovery: any folder under modules/ with a module.json is
+        // picked up automatically here — no core code changes needed to add a tool,
+        // and nothing under modules/ is ever touched by rebuilding/redeploying the DLL.
+        private string GetModulesJson()
+        {
+            var list = new List<Dictionary<string, object>>();
+            try
+            {
+                string modulesRoot = Path.Combine(_baseDir, "modules");
+                if (Directory.Exists(modulesRoot))
+                {
+                    var serializer = new JavaScriptSerializer();
+                    foreach (var dir in Directory.GetDirectories(modulesRoot).OrderBy(d => d, StringComparer.OrdinalIgnoreCase))
+                    {
+                        string manifestPath = Path.Combine(dir, "module.json");
+                        if (!File.Exists(manifestPath)) continue;
+                        try
+                        {
+                            var manifest = serializer.Deserialize<Dictionary<string, object>>(File.ReadAllText(manifestPath));
+                            string folder = Path.GetFileName(dir);
+                            manifest["folder"] = folder;
+                            if (!manifest.ContainsKey("id")) manifest["id"] = folder;
+                            if (!manifest.ContainsKey("name")) manifest["name"] = folder;
+                            if (!manifest.ContainsKey("entry")) manifest["entry"] = "index.html";
+                            list.Add(manifest);
+                        }
+                        catch { /* skip malformed module.json rather than fail the whole listing */ }
+                    }
+                }
+            }
+            catch { }
+            return new JavaScriptSerializer().Serialize(list);
+        }
+
         private void SendStatusPage(HttpListenerResponse res)
         {
             res.StatusCode = 200;
             res.ContentType = "text/html; charset=utf-8";
-            var html = "<!doctype html><meta charset='utf-8'><title>RubiKit 2.1</title>" +
+            var html = "<!doctype html><meta charset='utf-8'><title>RubiKit 2.2</title>" +
                        "<style>body{font:14px/1.4 system-ui,sans-serif;padding:18px;background:#0e1f12;color:#e9ecf1} a{color:#58a6ff;}</style>" +
-                       "<h2>RubiKit 2.1</h2><p>Online. Open <a href='/modules/notumHUD/index.html'>NotumHUD</a>.</p>";
+                       "<h2>RubiKit 2.2</h2><p>Online, but no boot.html/dashboard.html found next to RubiKit.dll. " +
+                       "Open <a href='/modules/notumhud/index.html'>NotumHUD</a> directly, or copy boot.html into the plugin folder for the module launcher.</p>";
             var bytes = Encoding.UTF8.GetBytes(html);
             res.OutputStream.Write(bytes, 0, bytes.Length);
         }
@@ -447,6 +488,8 @@ namespace RubiKit
                 case "pin_add": _state.Pin(value); res.StatusCode = 204; break;
                 case "pin_remove": _state.Unpin(value); res.StatusCode = 204; break;
                 case "theme": _state.Settings["theme"] = value; res.StatusCode = 204; break;
+                case "font": _state.Settings["font"] = value; res.StatusCode = 204; break;
+                case "fontSize": _state.Settings["fontSize"] = value; res.StatusCode = 204; break;
                 case "compact": _state.Settings["compact"] = value == "1" ? "true" : "false"; res.StatusCode = 204; break;
                 case "interval_ms": _state.Settings["interval_ms"] = value; res.StatusCode = 204; break;
                 case "enable": _state.Settings["enabled"] = value == "1" ? "true" : "false"; res.StatusCode = 204; break;
@@ -454,6 +497,16 @@ namespace RubiKit
                 case "misc_hide_add": _state.HideMisc(value); res.StatusCode = 204; break;
                 case "misc_hide_remove": _state.ShowMisc(value); res.StatusCode = 204; break;
                 case "misc_hide_clear": _state.ClearHiddenMisc(); res.StatusCode = 204; break;
+                case "set_category":
+                    try
+                    {
+                        var obj = new JavaScriptSerializer().Deserialize<Dictionary<string, string>>(value);
+                        if (obj != null && obj.TryGetValue("name", out var catName) && obj.TryGetValue("category", out var catValue))
+                            _state.SetCategoryOverride(catName, catValue);
+                    }
+                    catch { }
+                    res.StatusCode = 204;
+                    break;
                 default: res.StatusCode = 400; break;
             }
         }
@@ -518,16 +571,21 @@ namespace RubiKit
         public readonly ConcurrentDictionary<string, string> Settings = new ConcurrentDictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         private readonly ConcurrentDictionary<string, string> _pins = new ConcurrentDictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         private readonly ConcurrentDictionary<string, bool> _hiddenMisc = new ConcurrentDictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
+        private readonly ConcurrentDictionary<string, string> _categoryOverrides = new ConcurrentDictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
         public StateStore()
         {
-            Settings["theme"] = "theme-aetherium";
+            Settings["theme"] = "theme-notum";
+            Settings["font"] = "font-default";
+            Settings["fontSize"] = "100";
             Settings["compact"] = "false";
             Settings["interval_ms"] = "250";
             Settings["enabled"] = "true";
             Settings["panelOrder"] = "core,dmg,ac,pins";
             Pin("NanoCInit");
         }
+
+        public void SetCategoryOverride(string name, string category) => _categoryOverrides[name] = category;
 
         public void UpdateStats(ConcurrentDictionary<string, int> newStats)
         {
@@ -584,7 +642,10 @@ namespace RubiKit
             sb.Append("],");
             sb.Append("\"hiddenMisc\":[");
             sb.Append(string.Join(",", _hiddenMisc.Keys.Select(k => $"\"{k}\"")));
-            sb.Append("]");
+            sb.Append("],");
+            sb.Append("\"categoryOverrides\":{");
+            sb.Append(string.Join(",", _categoryOverrides.Select(c => $"\"{c.Key}\":\"{Escape(c.Value)}\"")));
+            sb.Append("}");
             sb.Append('}');
             return sb.ToString();
         }

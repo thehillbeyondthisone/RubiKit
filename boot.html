@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>RubiKit</title>
+<style>
+  :root {
+    --bg-color: #040811; --bg-grid: rgba(56, 189, 248, 0.07);
+    --panel-bg: rgba(10, 19, 38, 0.6); --panel-border: rgba(56, 189, 248, 0.2);
+    --panel-border-accent: rgba(56, 189, 248, 0.5); --glow-shadow: rgba(56, 189, 248, 0.1);
+    --text-primary: #E0FAFF; --text-secondary: #88C0D0; --text-muted: #4A5F7C;
+    --text-glow: #38bdf8; --accent-primary: #38BDF8; --interactive-bg: rgba(56, 189, 248, 0.1);
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100vh; font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    background-color: var(--bg-color); color: var(--text-primary); padding: 2rem;
+  }
+  #bg { position: fixed; inset: 0; z-index: -1;
+    background-image: linear-gradient(var(--bg-grid) 1px, transparent 1px), linear-gradient(to right, var(--bg-grid) 1px, transparent 1px);
+    background-size: 35px 35px; }
+  header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 2rem; flex-wrap: wrap; gap: 0.75rem; }
+  h1 { font-size: 1.4rem; letter-spacing: 0.12em; margin: 0; text-shadow: 0 0 10px var(--text-glow); }
+  h1 b { font-weight: 400; opacity: 0.6; }
+  .status { display: flex; align-items: center; gap: 0.5rem; font-size: 0.75rem; letter-spacing: 0.08em; color: var(--text-secondary); }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: #f59e0b; box-shadow: 0 0 8px #f59e0b; }
+  .dot.ok { background: #22c55e; box-shadow: 0 0 8px #22c55e; }
+  .dot.err { background: #ef4444; box-shadow: 0 0 8px #ef4444; }
+  #grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1rem; }
+  a.card {
+    display: block; text-decoration: none; color: inherit; background: var(--panel-bg);
+    border: 1px solid var(--panel-border); padding: 1.25rem; transition: all 0.2s;
+    clip-path: polygon(0 10px, 10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%);
+  }
+  a.card:hover { border-color: var(--accent-primary); box-shadow: 0 0 30px var(--glow-shadow); transform: translateY(-2px); }
+  .card .icon { font-size: 1.8rem; margin-bottom: 0.5rem; }
+  .card .name { font-weight: 700; letter-spacing: 0.04em; margin-bottom: 0.25rem; }
+  .card .desc { font-size: 0.8rem; color: var(--text-secondary); line-height: 1.4; }
+  #empty, #error { color: var(--text-muted); font-size: 0.9rem; line-height: 1.6; max-width: 560px; }
+  code { background: rgba(0,0,0,0.3); padding: 0.1rem 0.4rem; border-radius: 4px; color: var(--accent-primary); }
+  footer { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--panel-border); font-size: 0.75rem; color: var(--text-muted); line-height: 1.7; }
+</style>
+</head>
+<body>
+  <div id="bg" aria-hidden="true"></div>
+  <header>
+    <h1>RUBI<b>KIT</b></h1>
+    <div class="status"><span id="statusText">Checking...</span><div id="dot" class="dot"></div></div>
+  </header>
+
+  <div id="grid"></div>
+  <div id="empty" hidden>No modules found under <code>modules/</code>. Drop a tool in (see below) and reload.</div>
+  <div id="error" hidden>Couldn't reach the RubiKit API. Make sure the plugin is loaded and try reloading this page.</div>
+
+  <footer>
+    Add a tool: create <code>modules/&lt;yourtool&gt;/</code> next to <code>RubiKit.dll</code> with an
+    <code>index.html</code> and a <code>module.json</code>
+    (<code>{"id","name","icon","entry","description"}</code>) — it appears here automatically, no rebuild
+    or redeploy required. Anything under <code>modules/</code> is left alone when RubiKit.dll is upgraded.
+  </footer>
+
+  <script>
+    (async function () {
+      const statusText = document.getElementById('statusText');
+      const dot = document.getElementById('dot');
+      const grid = document.getElementById('grid');
+      const empty = document.getElementById('empty');
+      const errorBox = document.getElementById('error');
+
+      try {
+        const health = await fetch('/health');
+        if (health.ok) { statusText.textContent = 'Online'; dot.className = 'dot ok'; }
+        else { statusText.textContent = 'Degraded'; dot.className = 'dot'; }
+      } catch (e) {
+        statusText.textContent = 'Offline'; dot.className = 'dot err';
+      }
+
+      try {
+        const res = await fetch('/api/modules');
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const modules = await res.json();
+        if (!Array.isArray(modules) || modules.length === 0) { empty.hidden = false; return; }
+        modules.forEach(m => {
+          const a = document.createElement('a');
+          a.className = 'card';
+          a.href = `/modules/${encodeURIComponent(m.folder || m.id)}/${m.entry || 'index.html'}`;
+          const icon = document.createElement('div'); icon.className = 'icon'; icon.textContent = m.icon || '🧩';
+          const name = document.createElement('div'); name.className = 'name'; name.textContent = m.name || m.id || 'Untitled';
+          const desc = document.createElement('div'); desc.className = 'desc'; desc.textContent = m.description || '';
+          a.append(icon, name, desc);
+          grid.appendChild(a);
+        });
+      } catch (e) {
+        errorBox.hidden = false;
+      }
+    })();
+  </script>
+</body>
+</html>

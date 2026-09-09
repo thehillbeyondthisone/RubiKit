@@ -1,0 +1,8 @@
+{
+  "id": "notumhud",
+  "name": "NotumHUD",
+  "icon": "📊",
+  "entry": "index.html",
+  "description": "Real-time character stats, damage modifiers, and armor class HUD.",
+  "persistent": true
+}
