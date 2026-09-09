@@ -29,11 +29,11 @@ namespace RubiKit
     {
         private static Kernel _kernel;
 
-        public override void Run(string pluginDir)
+        public override void Run()
         {
             try
             {
-                _kernel = new Kernel(pluginDir ?? "");
+                _kernel = new Kernel(PluginDirectory ?? "");
                 _kernel.Start();
                 Chat.WriteLine("<color=#4da3ff>[RubiKit 2.2]</color> API on 127.0.0.1:8777  |  /rubi to open the module launcher");
                 Chat.RegisterCommand("rubi", (cmd, a, w) => _kernel.OpenStatus());
@@ -325,7 +325,7 @@ namespace RubiKit
 
                 SendStatusPage(res);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 try
                 {
