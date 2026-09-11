@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>RubiKit</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="bg" aria-hidden="true"></div>
+
+  <header class="topbar">
+    <div class="logo"><h1>RUBI<b>KIT</b></h1></div>
+    <div class="status">
+      <span id="statusText">Connecting…</span>
+      <div id="dot" class="dot" role="status" aria-live="polite"></div>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="panel">
+      <div class="section-head">
+        <h2>Modules</h2>
+        <button id="refresh" class="btn" title="Re-scan the modules folder">Refresh</button>
+      </div>
+      <div id="grid" class="grid"><div class="empty">Loading…</div></div>
+    </section>
+
+    <section class="panel install">
+      <h2>Install a module</h2>
+      <ol class="steps">
+        <li>Click <b>Open modules folder</b> below.</li>
+        <li>Drop the module's folder inside — it must contain a <code>module.json</code>.</li>
+        <li>Come back here and click <b>Refresh</b>.</li>
+      </ol>
+      <button id="openFolder" class="btn btn-accent">Open modules folder</button>
+      <p id="installMsg" class="msg" role="status" aria-live="polite"></p>
+    </section>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>

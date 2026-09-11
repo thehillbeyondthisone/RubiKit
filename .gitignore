@@ -1,0 +1,16 @@
+# ---- Build artifacts ----
+# The module front-end now lives in /modules (source) and is copied into
+# bin/<cfg>/modules on build, so the whole bin tree is generated output.
+[Oo]bj/
+[Bb]in/
+
+# ---- IDE / editor ----
+.vs/
+.idea/
+*.user
+*.suo
+*.userprefs
+
+# ---- OS cruft ----
+Thumbs.db
+.DS_Store

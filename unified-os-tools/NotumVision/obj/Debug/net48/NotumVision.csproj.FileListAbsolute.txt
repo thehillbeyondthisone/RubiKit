@@ -1,5 +1,0 @@
-C:\Users\Administrator\source\repos\NotumVision\obj\Debug\net48\NotumVision.csproj.AssemblyReference.cache
-C:\Users\Administrator\source\repos\NotumVision\obj\Debug\net48\NotumVision.GeneratedMSBuildEditorConfig.editorconfig
-C:\Users\Administrator\source\repos\NotumVision\obj\Debug\net48\NotumVision.AssemblyInfoInputs.cache
-C:\Users\Administrator\source\repos\NotumVision\obj\Debug\net48\NotumVision.AssemblyInfo.cs
-C:\Users\Administrator\source\repos\NotumVision\obj\Debug\net48\NotumVision.csproj.CoreCompileInputs.cache

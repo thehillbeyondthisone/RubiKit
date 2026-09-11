@@ -1,0 +1,87 @@
+/* RubiKit launcher — shares NotumHUD's Notum palette so the suite feels cohesive. */
+:root {
+  --bg: #040811;
+  --bg-grid: rgba(56, 189, 248, 0.07);
+  --panel-bg: rgba(10, 19, 38, 0.6);
+  --panel-border: rgba(56, 189, 248, 0.2);
+  --text-primary: #E0FAFF;
+  --text-secondary: #88C0D0;
+  --text-muted: #4A5F7C;
+  --accent: #38BDF8;
+  --accent-2: #0EA5E9;
+  --glow: rgba(56, 189, 248, 0.15);
+  --font-ui: 'Exo 2', system-ui, sans-serif;
+  --font-num: 'Orbitron', var(--font-ui);
+}
+
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  margin: 0;
+  font-family: var(--font-ui);
+  background: var(--bg);
+  color: var(--text-primary);
+  overflow-x: hidden;
+}
+
+#bg {
+  position: fixed; inset: 0; z-index: -1;
+  background-image:
+    linear-gradient(var(--bg-grid) 1px, transparent 1px),
+    linear-gradient(to right, var(--bg-grid) 1px, transparent 1px);
+  background-size: 35px 35px;
+}
+
+.topbar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 1rem 1.5rem; border-bottom: 1px solid var(--panel-border);
+}
+.logo h1 { margin: 0; font-size: 1.2rem; letter-spacing: 0.12em; text-shadow: 0 0 10px var(--glow); }
+.logo b { font-weight: 400; opacity: 0.6; }
+.status { display: flex; align-items: center; gap: 0.5rem; font-size: 0.7rem; letter-spacing: 0.1em; color: var(--text-secondary); text-transform: uppercase; }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: #f59e0b; box-shadow: 0 0 8px #f59e0b; transition: all .3s; }
+.dot.ok { background: #22c55e; box-shadow: 0 0 8px #22c55e; }
+.dot.err { background: #ef4444; box-shadow: 0 0 8px #ef4444; }
+
+.wrap { max-width: 980px; margin: 0 auto; padding: 1.5rem; display: flex; flex-direction: column; gap: 1.5rem; }
+
+.panel {
+  background: var(--panel-bg); border: 1px solid var(--panel-border);
+  backdrop-filter: blur(12px); padding: 1.25rem 1.5rem;
+  box-shadow: 0 0 40px var(--glow);
+  clip-path: polygon(0 10px, 10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%);
+}
+.panel h2 { margin: 0 0 1rem; font-size: 0.8rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--accent); }
+.section-head { display: flex; align-items: center; justify-content: space-between; }
+.section-head h2 { margin: 0; }
+
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1rem; }
+.empty { grid-column: 1 / -1; padding: 1.5rem; text-align: center; color: var(--text-muted); font-size: 0.9rem; }
+
+.card {
+  display: flex; align-items: center; gap: 0.9rem;
+  background: rgba(0,0,0,0.25); border: 1px solid var(--panel-border);
+  border-left: 3px solid var(--accent-2); border-radius: 6px; padding: 0.9rem;
+  transition: border-color .2s, transform .2s;
+}
+.card:hover { border-left-color: var(--accent); transform: translateY(-2px); }
+.icon { width: 40px; height: 40px; flex: 0 0 40px; display: flex; align-items: center; justify-content: center; }
+.icon-emoji { font-size: 1.8rem; line-height: 1; }
+img.icon { object-fit: contain; }
+.card-body { flex: 1 1 auto; min-width: 0; }
+.card-title { font-weight: 700; font-size: 0.95rem; display: flex; align-items: baseline; gap: 0.4rem; }
+.ver { font-family: var(--font-num); font-size: 0.65rem; color: var(--text-muted); }
+.card-desc { font-size: 0.78rem; color: var(--text-secondary); margin-top: 0.2rem; line-height: 1.35; }
+
+.btn {
+  font-family: var(--font-ui); background: rgba(0,0,0,0.25); color: var(--text-secondary);
+  border: 1px solid var(--panel-border); border-radius: 4px; padding: 0.45rem 0.9rem;
+  cursor: pointer; text-decoration: none; white-space: nowrap; transition: all .2s; font-size: 0.8rem;
+}
+.btn:hover { border-color: var(--accent); color: var(--text-primary); background: rgba(56,189,248,0.1); }
+.btn.open { flex: 0 0 auto; }
+.btn-accent { border-color: var(--accent); color: var(--accent); }
+
+.steps { margin: 0 0 1rem; padding-left: 1.2rem; color: var(--text-secondary); font-size: 0.85rem; line-height: 1.7; }
+.steps code { font-family: 'Fira Code', monospace; background: rgba(0,0,0,0.3); padding: 0.1rem 0.35rem; border-radius: 3px; color: var(--accent); }
+.msg { margin: 0.75rem 0 0; font-size: 0.8rem; color: var(--text-muted); min-height: 1.1em; }

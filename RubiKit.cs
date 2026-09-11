@@ -33,13 +33,15 @@ namespace RubiKit
             {
                 _kernel = new Kernel(pluginDir ?? "");
                 _kernel.Start();
-                Chat.WriteLine("<color=#4da3ff>[RubiKit 2.1]</color> API on 127.0.0.1:8777  |  /rubi or /rkit boot");
+                Diag.Info("life", "plugin Run() complete", "{\"pluginDir\":" + Json.Str(pluginDir) + "}");
+                Chat.WriteLine("<color=#4da3ff>[RubiKit 2.1]</color> API on 127.0.0.1:8777  |  /rubi or /rkit boot  |  /rkit debug");
                 Chat.RegisterCommand("rubi", (cmd, a, w) => _kernel.OpenDashboard());
                 Chat.RegisterCommand("rkit", (cmd, args, w) => _kernel.HandleRkitCommand(string.Join(" ", args)));
                 Chat.RegisterCommand("about", (cmd, a, w) => _kernel.ShowAbout());
             }
             catch (Exception ex)
             {
+                Diag.Error("life", "plugin Run() failed", ex);
                 Chat.WriteLine("[RubiKit] Failed: " + ex.Message, ChatColor.Red);
             }
         }
@@ -72,6 +74,12 @@ namespace RubiKit
         private readonly StateStore _state = new StateStore();
         private readonly object _sseGate = new object();
         private readonly List<SseClient> _clients = new List<SseClient>();
+        private readonly object _debugGate = new object();
+        private readonly List<SseClient> _debugClients = new List<SseClient>();
+        private readonly object _nearbyGate = new object();
+        private readonly List<SseClient> _nearbyClients = new List<SseClient>();
+        private volatile string _lastNearbyJson = "{}";
+        private System.Timers.Timer _nearbyTimer;
         private System.Timers.Timer _pushTimer;
         private System.Timers.Timer _cleanupTimer;
         private Task _httpLoopTask;
@@ -81,6 +89,10 @@ namespace RubiKit
         public Kernel(string baseDir)
         {
             _baseDir = baseDir;
+            Diag.Init(baseDir);
+            Diag.OnEntry = PushDebug;
+            Diag.StateClientCount = () => { lock (_sseGate) return _clients.Count; };
+            Diag.DebugClientCount = () => { lock (_debugGate) return _debugClients.Count; };
             _statService = new StatService(new StatProvider());
             _statService.OnSample += snap =>
             {
@@ -100,9 +112,11 @@ namespace RubiKit
                 _http.Prefixes.Add("http://127.0.0.1:" + Port + "/");
                 _http.Prefixes.Add("http://localhost:" + Port + "/");
                 _http.Start();
+                Diag.Info("life", "HTTP listener bound", "{\"port\":" + Port + "}");
             }
             catch (HttpListenerException ex)
             {
+                Diag.Error("life", "HTTP bind failed (code " + ex.ErrorCode + ")", ex);
                 if (ex.ErrorCode == 183) // ERROR_ALREADY_EXISTS
                 {
                     Chat.WriteLine($"[RubiKit] Port {Port} is already in use. This usually means:", ChatColor.Red);
@@ -128,6 +142,11 @@ namespace RubiKit
             _cleanupTimer.AutoReset = true;
             _cleanupTimer.Elapsed += (s, e) => CleanupDeadConnections();
             _cleanupTimer.Start();
+
+            _nearbyTimer = new System.Timers.Timer(1000);
+            _nearbyTimer.AutoReset = true;
+            _nearbyTimer.Elapsed += (s, e) => BroadcastNearby();
+            _nearbyTimer.Start();
         }
 
         // FIX: Improved disposal sequence to prevent port conflicts
@@ -135,10 +154,12 @@ namespace RubiKit
         {
             if (_disposed) return;
             _disposed = true;
+            Diag.Info("life", "Kernel.Dispose() starting");
 
             // Step 1: Stop timers immediately
             try { _pushTimer?.Stop(); _pushTimer?.Dispose(); } catch { }
             try { _cleanupTimer?.Stop(); _cleanupTimer?.Dispose(); } catch { }
+            try { _nearbyTimer?.Stop(); _nearbyTimer?.Dispose(); } catch { }
 
             // Step 2: Cancel all async operations
             try { _cts.Cancel(); } catch { }
@@ -152,6 +173,23 @@ namespace RubiKit
                 }
                 _clients.Clear();
             }
+            lock (_debugGate)
+            {
+                for (int i = _debugClients.Count - 1; i >= 0; i--)
+                {
+                    try { _debugClients[i].Dispose(); } catch { }
+                }
+                _debugClients.Clear();
+            }
+            lock (_nearbyGate)
+            {
+                for (int i = _nearbyClients.Count - 1; i >= 0; i--)
+                {
+                    try { _nearbyClients[i].Dispose(); } catch { }
+                }
+                _nearbyClients.Clear();
+            }
+            Diag.OnEntry = null;
 
             // Step 4: Stop the HTTP listener FIRST (stops accepting new connections)
             if (_http != null && _http.IsListening)
@@ -237,6 +275,14 @@ namespace RubiKit
                 case "mapviewer":
                     OpenModule("mapviewer");
                     break;
+                case "debug":
+                case "diag":
+                    OpenModule("debug");
+                    break;
+                case "verbose":
+                    Diag.Verbose = !Diag.Verbose;
+                    Chat.WriteLine("[RubiKit] verbose tracing " + (Diag.Verbose ? "ON" : "OFF"));
+                    break;
                 case "help":
                 default:
                     ShowRkitHelp();
@@ -269,6 +315,8 @@ namespace RubiKit
             sb.AppendLine("/rkit xanalytics - Open Xanalytics");
             sb.AppendLine("/rkit shop - Open ShopMaker");
             sb.AppendLine("/rkit map - Open MapViewer");
+            sb.AppendLine("/rkit debug - Open live diagnostics console");
+            sb.AppendLine("/rkit verbose - Toggle per-cycle trace logging");
             sb.AppendLine("/rkit help - Show this help");
             Chat.WriteLine(sb.ToString());
         }
@@ -312,6 +360,7 @@ namespace RubiKit
                     if (!_disposed)
                     {
                         Chat.WriteLine("[RubiKit] HTTP error: " + ex.Message, ChatColor.Yellow);
+                        Diag.Error("http", "accept loop error", ex);
                     }
                 }
             }
@@ -325,6 +374,9 @@ namespace RubiKit
                 try { ctx.Response.StatusCode = 503; ctx.Response.Close(); } catch { }
                 return;
             }
+
+            var _sw = System.Diagnostics.Stopwatch.StartNew();
+            Diag.HttpRequests++;
 
             HttpListenerRequest req = ctx.Request;
             HttpListenerResponse res = ctx.Response;
@@ -350,6 +402,32 @@ namespace RubiKit
             try
             {
                 if (path == "/events") { HandleEvents(res); return; }
+                if (path == "/nearby/stream") { HandleNearbyStream(res); return; }
+                if (path == "/api/nearby") { SendJson(res, 200, _lastNearbyJson); return; }
+                if (path == "/debug/stream") { HandleDebugStream(res); return; }
+                if (path == "/api/debug") { SendJson(res, 200, Diag.SnapshotJson()); return; }
+                if (path == "/api/debug/log")
+                {
+                    int lim = int.TryParse(req.QueryString["limit"], out var l) ? l : 300;
+                    SendJson(res, 200, Diag.EntriesJson(lim, req.QueryString["level"], req.QueryString["cat"]));
+                    return;
+                }
+                if (path == "/api/debug/stats") { SendJson(res, 200, GameProbe.RawStatDumpJson()); return; }
+                if (path == "/api/debug/game") { SendJson(res, 200, GameProbe.GameDumpJson()); return; }
+                if (path == "/api/debug/verbose")
+                {
+                    Diag.Verbose = req.QueryString["on"] == "1" || req.QueryString["on"] == "true";
+                    Diag.Info("diag", "verbose tracing " + (Diag.Verbose ? "ON" : "OFF"));
+                    SendJson(res, 200, "{\"verbose\":" + (Diag.Verbose ? "true" : "false") + "}");
+                    return;
+                }
+                if (path == "/debug" || path == "/debug/")
+                {
+                    string dbgPath = Path.Combine(_baseDir, "modules", "debug", "index.html");
+                    if (File.Exists(dbgPath)) { ServeStaticFile(dbgPath, ctx); return; }
+                    SendText(res, 404, "debug console not deployed (modules/debug/index.html missing)");
+                    return;
+                }
                 if (path == "/api/state") { SendJson(res, 200, _state.ToJson()); return; }
                 if (path == "/api/groups") { SendJson(res, 200, StatProvider.GetGroupsJson()); return; }
                 if (path == "/api/themes") { SendJson(res, 200, "[]"); return; }
@@ -386,8 +464,9 @@ namespace RubiKit
 
                 SendStatusPage(res);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                Diag.Error("http", req.HttpMethod + " " + path + " -> unhandled", ex);
                 try
                 {
                     SendText(res, 500, "Internal Server Error");
@@ -396,10 +475,24 @@ namespace RubiKit
             }
             finally
             {
-                if (res.ContentType != "text/event-stream")
+                _sw.Stop();
+                bool stream = res.ContentType == "text/event-stream";
+                if (!stream)
                 {
                     try { res.OutputStream.Close(); } catch { }
                 }
+                int code = 0;
+                try { code = res.StatusCode; } catch { }
+                string q = req.Url.Query ?? "";
+                string data = "{\"method\":" + Json.Str(req.HttpMethod) +
+                              ",\"path\":" + Json.Str(path + q) +
+                              ",\"status\":" + code +
+                              ",\"origin\":" + Json.Str(req.Headers["Origin"]) +
+                              ",\"ua\":" + Json.Str(req.UserAgent) +
+                              ",\"stream\":" + (stream ? "true" : "false") + "}";
+                string lvl = code >= 500 ? "error" : code >= 400 ? "warn" : "trace";
+                if (lvl == "trace") Diag.Trace("http", req.HttpMethod + " " + path + " " + code, data);
+                else Diag.Log(lvl, "http", req.HttpMethod + " " + path + " " + code, data, _sw.Elapsed.TotalMilliseconds);
             }
         }
 
@@ -413,7 +506,12 @@ namespace RubiKit
                        "<p>Modules: <a href='/modules/notumhud/index.html'>NotumHUD</a> | " +
                        "<a href='/modules/llm/index.html'>LLM</a> | " +
                        "<a href='/modules/hydra/index.html'>Hydra</a> | " +
-                       "<a href='/modules/xanalytics/index.html'>Xanalytics</a></p>";
+                       "<a href='/modules/xanalytics/index.html'>Xanalytics</a></p>" +
+                       "<p>Diagnostics: <a href='/debug'>Live Console</a> | " +
+                       "<a href='/api/debug'>Snapshot JSON</a> | " +
+                       "<a href='/api/debug/stats'>Raw Stats</a> | " +
+                       "<a href='/api/debug/game'>Game Dump</a> | " +
+                       "<a href='/api/nearby'>Nearby</a></p>";
             var bytes = Encoding.UTF8.GetBytes(html);
             res.OutputStream.Write(bytes, 0, bytes.Length);
         }
@@ -429,7 +527,10 @@ namespace RubiKit
             res.SendChunked = true;
             var client = new SseClient(res);
             client.Send("event: hello\ndata: {\"ok\":true}\n\n");
-            lock (_sseGate) _clients.Add(client);
+            int n;
+            lock (_sseGate) { _clients.Add(client); n = _clients.Count; }
+            Diag.SseConnects++;
+            Diag.Info("sse", "state stream client connected", "{\"clients\":" + n + "}");
         }
 
         private void BroadcastState()
@@ -444,6 +545,8 @@ namespace RubiKit
                     {
                         try { _clients[i].Dispose(); } catch { }
                         _clients.RemoveAt(i);
+                        Diag.SseDisconnects++;
+                        Diag.Info("sse", "state stream client dropped");
                     }
                 }
             }
@@ -463,6 +566,103 @@ namespace RubiKit
                     }
                 }
             }
+            lock (_debugGate)
+            {
+                for (int i = _debugClients.Count - 1; i >= 0; i--)
+                {
+                    if (!_debugClients[i].IsAlive())
+                    {
+                        try { _debugClients[i].Dispose(); } catch { }
+                        _debugClients.RemoveAt(i);
+                        Diag.SseDisconnects++;
+                    }
+                }
+            }
+            lock (_nearbyGate)
+            {
+                for (int i = _nearbyClients.Count - 1; i >= 0; i--)
+                {
+                    if (!_nearbyClients[i].IsAlive())
+                    {
+                        try { _nearbyClients[i].Dispose(); } catch { }
+                        _nearbyClients.RemoveAt(i);
+                        Diag.SseDisconnects++;
+                    }
+                }
+            }
+        }
+
+        private void HandleNearbyStream(HttpListenerResponse res)
+        {
+            if (_disposed) return;
+            res.StatusCode = 200;
+            res.KeepAlive = true;
+            res.ContentType = "text/event-stream";
+            res.AddHeader("Cache-Control", "no-cache");
+            res.SendChunked = true;
+            var client = new SseClient(res);
+            client.Send("event: nearby\ndata: " + _lastNearbyJson + "\n\n");
+            lock (_nearbyGate) _nearbyClients.Add(client);
+            Diag.SseConnects++;
+            Diag.Info("sse", "nearby stream client connected");
+        }
+
+        private void BroadcastNearby()
+        {
+            if (_disposed) return;
+            string json;
+            try { json = NearbyTracker.SampleJson(); }
+            catch (Exception ex) { Diag.Error("nearby", "sample failed", ex); return; }
+
+            _lastNearbyJson = json;
+            lock (_nearbyGate)
+            {
+                if (_nearbyClients.Count == 0) return;
+                string frame = "event: nearby\ndata: " + json + "\n\n";
+                for (int i = _nearbyClients.Count - 1; i >= 0; i--)
+                {
+                    if (!_nearbyClients[i].Send(frame))
+                    {
+                        try { _nearbyClients[i].Dispose(); } catch { }
+                        _nearbyClients.RemoveAt(i);
+                        Diag.SseDisconnects++;
+                    }
+                }
+            }
+        }
+
+        // Fan a diagnostics log frame out to every /debug/stream subscriber.
+        private void PushDebug(string frame)
+        {
+            if (_disposed) return;
+            lock (_debugGate)
+            {
+                if (_debugClients.Count == 0) return;
+                for (int i = _debugClients.Count - 1; i >= 0; i--)
+                {
+                    if (!_debugClients[i].Send(frame))
+                    {
+                        try { _debugClients[i].Dispose(); } catch { }
+                        _debugClients.RemoveAt(i);
+                        Diag.SseDisconnects++;
+                    }
+                }
+            }
+        }
+
+        private void HandleDebugStream(HttpListenerResponse res)
+        {
+            if (_disposed) return;
+            res.StatusCode = 200;
+            res.KeepAlive = true;
+            res.ContentType = "text/event-stream";
+            res.AddHeader("Cache-Control", "no-cache");
+            res.SendChunked = true;
+            var client = new SseClient(res);
+            client.Send("event: hello\ndata: " + Diag.SnapshotJson() + "\n\n");
+            lock (_debugGate) _debugClients.Add(client);
+            Diag.SseConnects++;
+            Diag.Info("sse", "debug stream client connected");
         }
 
         private sealed class SseClient : IDisposable
@@ -512,6 +712,7 @@ namespace RubiKit
             var q = req.QueryString;
             var action = (q["action"] ?? "").Trim().ToLowerInvariant();
             var value = q["value"] ?? "";
+            Diag.Info("cmd", "action=" + action, "{\"action\":" + Json.Str(action) + ",\"value\":" + Json.Str(value) + "}");
 
             switch (action)
             {
@@ -774,9 +975,15 @@ namespace RubiKit
 
         public StatSnapshot Read()
         {
-            if (Game.IsZoning || DynelManager.LocalPlayer == null)
-                return _lastSnapshot;
+            Diag.StatCycles++;
 
+            if (Game.IsZoning || DynelManager.LocalPlayer == null)
+            {
+                Diag.Trace("stat", "cycle skipped (zoning or no local player)");
+                return _lastSnapshot;
+            }
+
+            var sw = System.Diagnostics.Stopwatch.StartNew();
             try
             {
                 var snapshot = new StatSnapshot();
@@ -785,11 +992,33 @@ namespace RubiKit
                     snapshot.Stats[pair.Key] = DynelManager.LocalPlayer.GetStat(pair.Value);
                 }
 
+                int changed = 0;
+                var deltas = new List<string>();
+                foreach (var kv in snapshot.Stats)
+                {
+                    int old = _lastSnapshot.Stats.TryGetValue(kv.Key, out var ov) ? ov : 0;
+                    if (old != kv.Value)
+                    {
+                        changed++;
+                        if (deltas.Count < 40)
+                            deltas.Add("{\"name\":" + Json.Str(kv.Key) + ",\"old\":" + old + ",\"new\":" + kv.Value + "}");
+                    }
+                }
+
+                sw.Stop();
+                Diag.LastCycleMs = sw.Elapsed.TotalMilliseconds;
+                Diag.LastChangedStats = changed;
+                if (changed > 0)
+                    Diag.Trace("stat", "cycle: " + changed + " changed",
+                        "{\"changed\":" + changed + ",\"ms\":" + sw.Elapsed.TotalMilliseconds.ToString("0.0") +
+                        ",\"deltas\":[" + string.Join(",", deltas) + "]}");
+
                 _lastSnapshot = snapshot;
                 return snapshot;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                Diag.Error("stat", "read cycle failed", ex);
                 return _lastSnapshot;
             }
         }

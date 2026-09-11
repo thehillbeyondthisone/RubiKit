@@ -1,0 +1,8 @@
+{
+  "id": "debug",
+  "name": "Debug Console",
+  "icon": "bug",
+  "description": "Live runtime diagnostics: HTTP, stat cycles, exceptions, raw game-data surface",
+  "path": "modules/debug/index.html",
+  "persistent": false
+}

@@ -48,6 +48,14 @@
     "persistent": false
   },
   {
+    "id": "debug",
+    "name": "Debug Console",
+    "icon": "bug",
+    "description": "Live runtime diagnostics and raw game-data surface",
+    "path": "modules/debug/index.html",
+    "persistent": false
+  },
+  {
     "id": "notumvision",
     "name": "NotumVision",
     "icon": "modules/icons/notumvision.svg",

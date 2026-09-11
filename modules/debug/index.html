@@ -1,0 +1,364 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>RubiKit — Debug Console</title>
+<style>
+  :root {
+    --bg: #0b0f0c; --panel: #121a14; --panel2: #0e150f; --border: #23342a;
+    --text: #d6e4dc; --muted: #7f9a8c; --accent: #4da3ff;
+    --trace: #6b8a9e; --info: #7ee787; --warn: #f0c674; --error: #ff6b6b;
+    --chg: #ffd166;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    background: var(--bg); color: var(--text);
+    font: 13px/1.45 ui-monospace, "Cascadia Code", "Fira Code", Consolas, monospace;
+    display: flex; flex-direction: column; height: 100vh; overflow: hidden;
+  }
+  header {
+    padding: 8px 12px; background: var(--panel); border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+  }
+  header h1 { font-size: 13px; margin: 0; color: var(--accent); letter-spacing: .5px; }
+  .stat { color: var(--muted); }
+  .stat b { color: var(--text); font-weight: 600; }
+  .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--error); margin-right: 5px; }
+  .dot.ok { background: var(--info); }
+  .tabs { display: flex; gap: 2px; padding: 0 8px; background: var(--panel); border-bottom: 1px solid var(--border); }
+  .tabs button {
+    background: transparent; border: 0; border-bottom: 2px solid transparent;
+    color: var(--muted); padding: 8px 14px; cursor: pointer; font: inherit;
+  }
+  .tabs button.active { color: var(--text); border-bottom-color: var(--accent); }
+  .toolbar {
+    padding: 6px 12px; background: var(--panel2); border-bottom: 1px solid var(--border);
+    display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+  }
+  .toolbar select, .toolbar input, .toolbar button {
+    background: var(--bg); color: var(--text); border: 1px solid var(--border);
+    padding: 4px 8px; font: inherit; border-radius: 4px;
+  }
+  .toolbar button { cursor: pointer; }
+  .toolbar label { color: var(--muted); display: flex; align-items: center; gap: 5px; }
+  main { flex: 1; overflow: auto; }
+  .view { display: none; height: 100%; }
+  .view.active { display: block; }
+
+  /* log */
+  #log { padding: 4px 0; }
+  .row { padding: 2px 12px; white-space: pre-wrap; word-break: break-word; border-bottom: 1px solid rgba(255,255,255,.03); }
+  .row:hover { background: rgba(255,255,255,.03); }
+  .row .ts { color: var(--muted); }
+  .row .lvl { display: inline-block; width: 46px; font-weight: 700; }
+  .row .cat { color: var(--accent); }
+  .row.trace .lvl { color: var(--trace); }
+  .row.info  .lvl { color: var(--info); }
+  .row.warn  .lvl { color: var(--warn); }
+  .row.error .lvl { color: var(--error); }
+  .row.error { background: rgba(255,107,107,.08); }
+  .row .data { color: var(--muted); }
+  .row .ms { color: var(--chg); }
+
+  /* grids */
+  table { border-collapse: collapse; width: 100%; }
+  th, td { text-align: left; padding: 3px 12px; border-bottom: 1px solid var(--border); }
+  th { position: sticky; top: 0; background: var(--panel); color: var(--muted); }
+  td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  tr.changed td { background: rgba(255,209,102,.14); color: var(--chg); }
+  tr.zero td { color: #4d5f55; }
+  pre#gamejson, pre#snapjson { margin: 0; padding: 12px; white-space: pre-wrap; word-break: break-word; }
+  .pill { padding: 1px 6px; border: 1px solid var(--border); border-radius: 10px; color: var(--muted); }
+</style>
+</head>
+<body>
+<header>
+  <h1>RubiKit · DEBUG</h1>
+  <span class="stat"><span id="conn" class="dot"></span><span id="connText">connecting…</span></span>
+  <span class="stat">up <b id="uptime">–</b></span>
+  <span class="stat">http <b id="cHttp">0</b> / err <b id="cErr">0</b></span>
+  <span class="stat">cycles <b id="cCyc">0</b> <span class="pill"><b id="cCycMs">0</b> ms</span> <span class="pill">Δ<b id="cChg">0</b></span></span>
+  <span class="stat">sse <b id="cSse">0</b></span>
+  <span class="stat">verbose <b id="cVerbose">?</b></span>
+</header>
+
+<div class="tabs">
+  <button data-tab="log" class="active">Log stream</button>
+  <button data-tab="nearby">Nearby</button>
+  <button data-tab="stats">Raw stats</button>
+  <button data-tab="game">Game dump</button>
+  <button data-tab="snap">Snapshot</button>
+</div>
+
+<div class="toolbar" id="tb-log">
+  <label>level
+    <select id="fLevel">
+      <option value="">all</option><option>trace</option><option>info</option><option>warn</option><option>error</option>
+    </select>
+  </label>
+  <label>cat
+    <select id="fCat">
+      <option value="">all</option><option>http</option><option>stat</option><option>sse</option><option>cmd</option><option>life</option><option>diag</option><option>nearby</option>
+    </select>
+  </label>
+  <label>find <input id="fText" placeholder="substring…" size="18"></label>
+  <label><input type="checkbox" id="fFollow" checked> follow</label>
+  <button id="btnVerbose">toggle verbose</button>
+  <button id="btnClear">clear view</button>
+</div>
+
+<div class="toolbar" id="tb-nearby" style="display:none">
+  <span class="stat"><span id="nDot" class="dot"></span><span id="nConnText">connecting…</span></span>
+  <span class="stat">players <b id="nPlayerCount">0</b> · containers <b id="nContainerCount">0</b> · read <b id="nReadMs">–</b>ms</span>
+  <label>find <input id="nFind" placeholder="name…" size="18"></label>
+</div>
+
+<div class="toolbar" id="tb-stats" style="display:none">
+  <label>refresh
+    <select id="sRate"><option value="0">paused</option><option value="500">0.5s</option><option value="1000" selected>1s</option><option value="2000">2s</option></select>
+  </label>
+  <label>find <input id="sFind" placeholder="stat name…" size="18"></label>
+  <label><input type="checkbox" id="sHideZero"> hide zero</label>
+  <label><input type="checkbox" id="sHideSentinel" checked> hide n/a</label>
+  <label><input type="checkbox" id="sChangedOnly"> changed only</label>
+  <span class="stat">enum <b id="sEnum">–</b> · distinct <b id="sDistinct">–</b> · non-zero <b id="sNonZero">–</b> · n/a <b id="sSentinel">–</b> · read <b id="sReadMs">–</b>ms</span>
+</div>
+
+<div class="toolbar" id="tb-game" style="display:none">
+  <label>refresh
+    <select id="gRate"><option value="0">paused</option><option value="1000">1s</option><option value="2000" selected>2s</option><option value="5000">5s</option></select>
+  </label>
+  <button id="gCopy">copy JSON</button>
+</div>
+
+<div class="toolbar" id="tb-snap" style="display:none">
+  <button id="snapRefresh">refresh</button>
+  <button id="snapCopy">copy JSON</button>
+</div>
+
+<main>
+  <div class="view active" id="view-log"><div id="log"></div></div>
+  <div class="view" id="view-nearby">
+    <h2 style="margin:10px 12px 4px;font-size:12px;color:var(--muted);font-weight:600;">PLAYERS</h2>
+    <table><thead><tr><th>name</th><th class="num">dist</th><th class="num">lvl</th><th>prof</th><th>breed</th><th>side</th><th class="num">hp%</th><th>los</th></tr></thead><tbody id="nPlayersBody"></tbody></table>
+    <h2 style="margin:14px 12px 4px;font-size:12px;color:var(--muted);font-weight:600;">CONTAINERS</h2>
+    <table><thead><tr><th>kind</th><th>name</th><th class="num">dist</th><th>open</th><th>locked</th><th class="num">items</th><th>contents</th></tr></thead><tbody id="nContainersBody"></tbody></table>
+  </div>
+  <div class="view" id="view-stats">
+    <table><thead><tr><th>stat</th><th class="num">value</th><th class="num">prev</th></tr></thead><tbody id="statsBody"></tbody></table>
+  </div>
+  <div class="view" id="view-game"><pre id="gamejson">–</pre></div>
+  <div class="view" id="view-snap"><pre id="snapjson">–</pre></div>
+</main>
+
+<script>
+const API = location.origin;
+const $ = s => document.querySelector(s);
+
+// ---------- header counters ----------
+function applySnapshot(s) {
+  if (!s || !s.counters) return;
+  $('#uptime').textContent = fmtDur(s.uptimeSec);
+  $('#cHttp').textContent = s.counters.httpRequests;
+  $('#cErr').textContent = s.counters.httpErrors;
+  $('#cCyc').textContent = s.counters.statCycles;
+  $('#cCycMs').textContent = (+s.counters.lastCycleMs).toFixed(1);
+  $('#cChg').textContent = s.counters.lastChangedStats;
+  $('#cSse').textContent = s.counters.stateClients + '+' + s.counters.debugClients;
+  $('#cVerbose').textContent = s.verbose ? 'ON' : 'off';
+}
+function fmtDur(sec) {
+  sec = Math.floor(+sec); const h = sec/3600|0, m = (sec%3600)/60|0, s = sec%60;
+  return (h?h+'h ':'') + (m||h?m+'m ':'') + s + 's';
+}
+
+// ---------- log stream ----------
+const logEl = $('#log');
+let paused = false, buffer = [];
+function passFilter(e) {
+  const lv = $('#fLevel').value, ct = $('#fCat').value, tx = $('#fText').value.toLowerCase();
+  if (lv && e.level !== lv) return false;
+  if (ct && e.cat !== ct) return false;
+  if (tx) {
+    const hay = (e.msg + ' ' + JSON.stringify(e.data||'')).toLowerCase();
+    if (!hay.includes(tx)) return false;
+  }
+  return true;
+}
+function addRow(e) {
+  if (!passFilter(e)) return;
+  const div = document.createElement('div');
+  div.className = 'row ' + e.level;
+  const ms = e.ms != null ? ` <span class="ms">${(+e.ms).toFixed(1)}ms</span>` : '';
+  const data = e.data ? ` <span class="data">${escapeHtml(JSON.stringify(e.data))}</span>` : '';
+  div.innerHTML = `<span class="ts">${e.ts.substr(11,12)}</span> `
+    + `<span class="lvl">${e.level.toUpperCase()}</span> `
+    + `<span class="cat">[${e.cat}]</span> ${escapeHtml(e.msg)}${ms}${data}`;
+  logEl.appendChild(div);
+  while (logEl.childNodes.length > 3000) logEl.removeChild(logEl.firstChild);
+  if ($('#fFollow').checked) div.scrollIntoView({block:'end'});
+}
+function escapeHtml(s){return String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
+function rerenderLog() { logEl.innerHTML=''; buffer.forEach(addRow); }
+
+['#fLevel','#fCat'].forEach(s => $(s).addEventListener('change', rerenderLog));
+$('#fText').addEventListener('input', rerenderLog);
+$('#btnClear').addEventListener('click', () => { buffer=[]; logEl.innerHTML=''; });
+$('#btnVerbose').addEventListener('click', async () => {
+  const cur = $('#cVerbose').textContent === 'ON';
+  await fetch(`${API}/api/debug/verbose?on=${cur?0:1}`);
+});
+
+// SSE
+let es;
+function connect() {
+  es = new EventSource(`${API}/debug/stream`);
+  es.addEventListener('hello', ev => {
+    const s = JSON.parse(ev.data); applySnapshot(s);
+    (s.log||[]).forEach(e => { buffer.push(e); });
+    rerenderLog();
+    setConn(true);
+  });
+  es.addEventListener('log', ev => {
+    const e = JSON.parse(ev.data);
+    buffer.push(e); if (buffer.length > 4000) buffer.shift();
+    addRow(e);
+  });
+  es.onerror = () => { setConn(false); };
+  es.onopen = () => setConn(true);
+}
+function setConn(ok) {
+  $('#conn').classList.toggle('ok', ok);
+  $('#connText').textContent = ok ? 'live' : 'reconnecting…';
+}
+connect();
+
+// poll snapshot for header counters every 2s
+setInterval(async () => {
+  try { applySnapshot(await (await fetch(`${API}/api/debug`)).json()); } catch {}
+}, 2000);
+
+// ---------- tabs ----------
+document.querySelectorAll('.tabs button').forEach(b => {
+  b.addEventListener('click', () => {
+    document.querySelectorAll('.tabs button').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    const t = b.dataset.tab;
+    document.querySelectorAll('.view').forEach(v => v.classList.toggle('active', v.id === 'view-'+t));
+    ['log','nearby','stats','game','snap'].forEach(n => $('#tb-'+n).style.display = n===t ? 'flex' : 'none');
+  });
+});
+
+// ---------- nearby ----------
+let nearbyEs, lastNearby = null;
+function connectNearby() {
+  nearbyEs = new EventSource(`${API}/nearby/stream`);
+  nearbyEs.addEventListener('nearby', ev => { lastNearby = JSON.parse(ev.data); renderNearby(); setNearbyConn(true); });
+  nearbyEs.onopen = () => setNearbyConn(true);
+  nearbyEs.onerror = () => setNearbyConn(false);
+}
+function setNearbyConn(ok) {
+  $('#nDot').classList.toggle('ok', ok);
+  $('#nConnText').textContent = ok ? 'live' : 'reconnecting…';
+}
+function renderNearby() {
+  if (!lastNearby) return;
+  const find = $('#nFind').value.toLowerCase();
+  $('#nPlayerCount').textContent = lastNearby.playerCount;
+  $('#nContainerCount').textContent = lastNearby.containerCount;
+  $('#nReadMs').textContent = (+lastNearby.readMs).toFixed(2);
+
+  const pRows = (lastNearby.players || [])
+    .filter(p => !find || p.name.toLowerCase().includes(find))
+    .map(p => `<tr><td>${escapeHtml(p.name)}</td><td class="num">${p.dist}</td><td class="num">${p.level}</td>`
+      + `<td>${escapeHtml(p.profession||'')}</td><td>${escapeHtml(p.breed||'')}</td><td>${escapeHtml(p.side||'')}</td>`
+      + `<td class="num">${p.hpPct}</td><td>${p.los?'yes':'no'}</td></tr>`);
+  $('#nPlayersBody').innerHTML = pRows.join('') || '<tr><td colspan="8" style="color:var(--muted)">none in range</td></tr>';
+
+  const cRows = (lastNearby.containers || [])
+    .filter(c => !find || c.name.toLowerCase().includes(find))
+    .map(c => `<tr><td>${escapeHtml(c.kind)}</td><td>${escapeHtml(c.name)}</td><td class="num">${c.dist}</td>`
+      + `<td>${c.open?'yes':'no'}</td><td>${c.locked?'yes':'no'}</td><td class="num">${c.itemCount<0?'–':c.itemCount}</td>`
+      + `<td>${escapeHtml((c.items||[]).join(', '))}</td></tr>`);
+  $('#nContainersBody').innerHTML = cRows.join('') || '<tr><td colspan="7" style="color:var(--muted)">none in range</td></tr>';
+}
+$('#nFind').addEventListener('input', renderNearby);
+connectNearby();
+
+// ---------- raw stats ----------
+// This exact value means "not applicable to this Dynel" (item/NPC/server-only
+// stat read off a player) — it is NOT real data, see Diagnostics.cs.
+const STAT_SENTINEL = 1234567890;
+let statsTimer, lastStats = {};
+async function pullStats() {
+  try {
+    const d = await (await fetch(`${API}/api/debug/stats`)).json();
+    $('#sEnum').textContent = d.enumCount;
+    $('#sDistinct').textContent = d.distinctCount;
+    $('#sNonZero').textContent = d.nonZeroCount;
+    $('#sSentinel').textContent = d.sentinelCount;
+    $('#sReadMs').textContent = (+d.readMs).toFixed(2);
+    const changed = new Set((d.changed||[]).map(c => c.name));
+    const find = $('#sFind').value.toLowerCase();
+    const hideZero = $('#sHideZero').checked;
+    const hideSentinel = $('#sHideSentinel').checked;
+    const changedOnly = $('#sChangedOnly').checked;
+    const rows = [];
+    for (const [k,v] of Object.entries(d.stats)) {
+      if (find && !k.toLowerCase().includes(find)) continue;
+      const isSentinel = v === STAT_SENTINEL;
+      if (hideSentinel && isSentinel) continue;
+      if (hideZero && v === 0) continue;
+      if (changedOnly && !changed.has(k)) continue;
+      const prev = lastStats[k];
+      const cls = changed.has(k) ? 'changed' : isSentinel ? 'zero' : (v === 0 ? 'zero' : '');
+      const val = isSentinel ? 'n/a' : v;
+      rows.push(`<tr class="${cls}"><td>${k}</td><td class="num">${val}</td><td class="num">${prev==null?'':(prev===STAT_SENTINEL?'n/a':prev)}</td></tr>`);
+    }
+    $('#statsBody').innerHTML = rows.join('');
+    lastStats = d.stats;
+  } catch (e) { $('#statsBody').innerHTML = `<tr><td colspan="3">error: ${e}</td></tr>`; }
+}
+$('#sHideSentinel').addEventListener('input', pullStats);
+function scheduleStats() {
+  clearInterval(statsTimer);
+  const r = +$('#sRate').value;
+  if (r) { pullStats(); statsTimer = setInterval(pullStats, r); }
+}
+$('#sRate').addEventListener('change', scheduleStats);
+['#sFind','#sHideZero','#sChangedOnly'].forEach(s => $(s).addEventListener('input', pullStats));
+scheduleStats();
+
+// ---------- game dump ----------
+let gameTimer;
+async function pullGame() {
+  try {
+    const d = await (await fetch(`${API}/api/debug/game`)).json();
+    $('#gamejson').textContent = JSON.stringify(d, null, 2);
+  } catch (e) { $('#gamejson').textContent = 'error: ' + e; }
+}
+function scheduleGame() {
+  clearInterval(gameTimer);
+  const r = +$('#gRate').value;
+  if (r) { pullGame(); gameTimer = setInterval(pullGame, r); }
+}
+$('#gRate').addEventListener('change', scheduleGame);
+$('#gCopy').addEventListener('click', () => navigator.clipboard.writeText($('#gamejson').textContent));
+scheduleGame();
+
+// ---------- snapshot ----------
+async function pullSnap() {
+  try {
+    const d = await (await fetch(`${API}/api/debug`)).json();
+    $('#snapjson').textContent = JSON.stringify(d, null, 2);
+    applySnapshot(d);
+  } catch (e) { $('#snapjson').textContent = 'error: ' + e; }
+}
+$('#snapRefresh').addEventListener('click', pullSnap);
+$('#snapCopy').addEventListener('click', () => navigator.clipboard.writeText($('#snapjson').textContent));
+pullSnap();
+</script>
+</body>
+</html>

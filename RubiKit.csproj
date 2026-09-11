@@ -3,7 +3,9 @@
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <Platform Condition=" '$(Platform)' == '' ">x86</Platform>
+    <LangVersion>7.3</LangVersion>
+    <PlatformTarget>x86</PlatformTarget>
     <ProjectGuid>{DD60FFDF-3315-4D08-97C0-8648E844C69B}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
@@ -67,6 +69,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="RubiKit.cs" />
+    <Compile Include="Diagnostics.cs" />
+    <Compile Include="Nearby.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
